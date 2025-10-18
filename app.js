@@ -10,7 +10,7 @@ const supportMessage = document.getElementById('support-message');
 const themeToggle = document.getElementById('theme-toggle');
 
 const SUPPORTED_TYPES = new Set(['image/jpeg', 'image/png']);
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 20MB
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 const MAX_FILE_SIZE_LABEL = '50 MB';
 const MAX_DIMENSION = 20000;
 const MAX_DIMENSION_LABEL = '20,000px';

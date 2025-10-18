@@ -1,0 +1,9 @@
+[test]
+# Enable coverage reporting
+coverage = true
+
+# Coverage thresholds (optional)
+coverageThreshold = 80
+
+# Report coverage in console
+coverageReporter = ["text", "lcov"]

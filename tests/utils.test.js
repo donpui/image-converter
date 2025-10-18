@@ -1,17 +1,7 @@
-import { describe, test, expect } from 'bun:test';
-
-// Import functions to test
-// Since app.js uses DOM, we'll test the pure utility functions
+import { describe, test, expect, beforeEach } from 'bun:test';
+import { formatBytes, createFileNameData, detectMimeType, registerConversion, isRateLimited, resetRateLimiting } from '../utils.js';
 
 describe('formatBytes', () => {
-  const formatBytes = (bytes) => {
-    if (!Number.isFinite(bytes)) return '0 B';
-    if (bytes === 0) return '0 B';
-    const units = ['B', 'KB', 'MB', 'GB'];
-    const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
-    const size = bytes / Math.pow(1024, index);
-    return `${size.toFixed(size >= 10 || index === 0 ? 0 : 1)} ${units[index]}`;
-  };
 
   test('formats bytes correctly', () => {
     expect(formatBytes(0)).toBe('0 B');
@@ -30,17 +20,6 @@ describe('formatBytes', () => {
 });
 
 describe('createFileNameData', () => {
-  const createFileNameData = (originalName) => {
-    const baseName = (originalName || 'converted-image').replace(/\.[^/.]+$/, '');
-    const trimmed = baseName.trim().slice(0, 120);
-    const displayName = trimmed || 'converted-image';
-    const downloadName = displayName
-      .toLowerCase()
-      .replace(/[^a-z0-9_-]+/g, '-')
-      .replace(/^-+|-+$/g, '') || 'converted-image';
-    return { displayName, downloadName };
-  };
-
   test('removes file extension', () => {
     const result = createFileNameData('photo.jpg');
     expect(result.displayName).toBe('photo');
@@ -72,32 +51,6 @@ describe('detectMimeType', () => {
     const blob = new Blob([pngBytes]);
     const file = new File([blob], 'test.png');
     
-    const detectMimeType = async (file) => {
-      const slice = file.slice(0, 12);
-      const buffer = await slice.arrayBuffer();
-      const bytes = new Uint8Array(buffer);
-      
-      if (
-        bytes.length >= 8 &&
-        bytes[0] === 0x89 &&
-        bytes[1] === 0x50 &&
-        bytes[2] === 0x4e &&
-        bytes[3] === 0x47 &&
-        bytes[4] === 0x0d &&
-        bytes[5] === 0x0a &&
-        bytes[6] === 0x1a &&
-        bytes[7] === 0x0a
-      ) {
-        return 'image/png';
-      }
-      
-      if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
-        return 'image/jpeg';
-      }
-      
-      return null;
-    };
-    
     const mime = await detectMimeType(file);
     expect(mime).toBe('image/png');
   });
@@ -106,32 +59,6 @@ describe('detectMimeType', () => {
     const jpegBytes = new Uint8Array([0xff, 0xd8, 0xff]);
     const blob = new Blob([jpegBytes]);
     const file = new File([blob], 'test.jpg');
-    
-    const detectMimeType = async (file) => {
-      const slice = file.slice(0, 12);
-      const buffer = await slice.arrayBuffer();
-      const bytes = new Uint8Array(buffer);
-      
-      if (
-        bytes.length >= 8 &&
-        bytes[0] === 0x89 &&
-        bytes[1] === 0x50 &&
-        bytes[2] === 0x4e &&
-        bytes[3] === 0x47 &&
-        bytes[4] === 0x0d &&
-        bytes[5] === 0x0a &&
-        bytes[6] === 0x1a &&
-        bytes[7] === 0x0a
-      ) {
-        return 'image/png';
-      }
-      
-      if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
-        return 'image/jpeg';
-      }
-      
-      return null;
-    };
     
     const mime = await detectMimeType(file);
     expect(mime).toBe('image/jpeg');
@@ -142,69 +69,35 @@ describe('detectMimeType', () => {
     const blob = new Blob([unknownBytes]);
     const file = new File([blob], 'test.bin');
     
-    const detectMimeType = async (file) => {
-      const slice = file.slice(0, 12);
-      const buffer = await slice.arrayBuffer();
-      const bytes = new Uint8Array(buffer);
-      
-      if (
-        bytes.length >= 8 &&
-        bytes[0] === 0x89 &&
-        bytes[1] === 0x50 &&
-        bytes[2] === 0x4e &&
-        bytes[3] === 0x47 &&
-        bytes[4] === 0x0d &&
-        bytes[5] === 0x0a &&
-        bytes[6] === 0x1a &&
-        bytes[7] === 0x0a
-      ) {
-        return 'image/png';
-      }
-      
-      if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
-        return 'image/jpeg';
-      }
-      
-      return null;
-    };
-    
     const mime = await detectMimeType(file);
     expect(mime).toBeNull();
   });
 });
 
 describe('Rate limiting', () => {
+  beforeEach(() => {
+    resetRateLimiting();
+  });
+  
   test('prevents excessive conversions', () => {
-    const MAX_CONVERSIONS_PER_WINDOW = 15;
-    const RATE_LIMIT_WINDOW_MS = 30 * 1000;
-    const conversionLog = [];
-    
-    const pruneConversionLog = (now) => {
-      while (conversionLog.length && now - conversionLog[0] > RATE_LIMIT_WINDOW_MS) {
-        conversionLog.shift();
-      }
-    };
-    
-    const isRateLimited = () => {
-      const now = Date.now();
-      pruneConversionLog(now);
-      return conversionLog.length >= MAX_CONVERSIONS_PER_WINDOW;
-    };
-    
-    const registerConversion = () => {
-      const now = Date.now();
-      pruneConversionLog(now);
-      conversionLog.push(now);
-    };
-    
-    // Add 15 conversions
-    for (let i = 0; i < 15; i++) {
+    // Add 20 conversions (the max per minute)
+    for (let i = 0; i < 20; i++) {
       expect(isRateLimited()).toBe(false);
       registerConversion();
     }
     
-    // 16th should be rate limited
+    // 21st should be rate limited
     expect(isRateLimited()).toBe(true);
+  });
+  
+  test('tracks conversion count correctly', () => {
+    // Register a few conversions
+    registerConversion();
+    registerConversion();
+    registerConversion();
+    
+    // Should not be rate limited with only 3 conversions
+    expect(isRateLimited()).toBe(false);
   });
 });
 
