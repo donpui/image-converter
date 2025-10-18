@@ -8,6 +8,8 @@ const clearBtn = document.getElementById('clear-btn');
 const regenerateBtn = document.getElementById('regenerate-btn');
 
 const SUPPORTED_TYPES = new Set(['image/jpeg', 'image/png']);
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+const MAX_FILE_SIZE_LABEL = '20 MB';
 const activeUrls = new Set();
 const storedFiles = [];
 const regenerateDefaultLabel = regenerateBtn ? regenerateBtn.textContent : 'Regenerate';
@@ -70,12 +72,32 @@ regenerateBtn.addEventListener('click', async () => {
   let successCount = 0;
 
   for (const file of storedFiles) {
+    if (file.size > MAX_FILE_SIZE) {
+      announce(`${file.name} skipped during regenerate (exceeds ${MAX_FILE_SIZE_LABEL}).`);
+      continue;
+    }
+
+    let trustedMime;
     try {
-      const { width, height, webpBlob, originalInfo } = await convertFile(file, quality);
+      trustedMime = await detectMimeType(file);
+    } catch (error) {
+      console.error(error);
+    }
+
+    if (!trustedMime || !SUPPORTED_TYPES.has(trustedMime)) {
+      announce(`${file.name} skipped during regenerate (unsupported or spoofed format).`);
+      continue;
+    }
+
+    try {
+      const { width, height, webpBlob, originalInfo } = await convertFile(file, quality, trustedMime);
       const webpUrl = URL.createObjectURL(webpBlob);
+      const { displayName, downloadName } = createFileNameData(file.name);
       renderResult({
-        fileName: file.name.replace(/\.[^/.]+$/, '') || file.name,
+        displayName,
+        downloadName,
         webpUrl,
+        webpBlob,
         webpSize: webpBlob.size,
         dimensions: `${width} × ${height}`,
         mime: webpBlob.type,
@@ -112,17 +134,32 @@ async function convertFiles(fileList) {
   const quality = qualityPercent / 100;
 
   for (const file of files) {
-    if (!SUPPORTED_TYPES.has(file.type)) {
-      announce(`${file.name} skipped (unsupported format).`);
+    if (file.size > MAX_FILE_SIZE) {
+      announce(`${file.name} skipped (exceeds ${MAX_FILE_SIZE_LABEL}).`);
+      continue;
+    }
+
+    let trustedMime;
+    try {
+      trustedMime = await detectMimeType(file);
+    } catch (error) {
+      console.error(error);
+    }
+
+    if (!trustedMime || !SUPPORTED_TYPES.has(trustedMime)) {
+      announce(`${file.name} skipped (unsupported or spoofed format).`);
       continue;
     }
 
     try {
-      const { width, height, webpBlob, originalInfo } = await convertFile(file, quality);
+      const { width, height, webpBlob, originalInfo } = await convertFile(file, quality, trustedMime);
       const webpUrl = URL.createObjectURL(webpBlob);
+      const { displayName, downloadName } = createFileNameData(file.name);
       renderResult({
-        fileName: file.name.replace(/\.[^/.]+$/, '') || file.name,
+        displayName,
+        downloadName,
         webpUrl,
+        webpBlob,
         webpSize: webpBlob.size,
         dimensions: `${width} × ${height}`,
         mime: webpBlob.type,
@@ -143,7 +180,8 @@ async function convertFiles(fileList) {
   }
 }
 
-async function convertFile(file, quality) {
+async function convertFile(file, quality, trustedMime) {
+  const effectiveMime = trustedMime || (await detectMimeType(file));
   const { img, width, height } = await loadImage(file);
   const canvas = document.createElement('canvas');
   canvas.width = width;
@@ -161,7 +199,8 @@ async function convertFile(file, quality) {
     throw new Error('Browser failed to create WebP blob.');
   }
 
-  const originalInfo = `${formatBytes(file.size)} • ${file.type || 'unknown'} • ${width} × ${height}`;
+  const sourceMime = effectiveMime || file.type || 'unknown';
+  const originalInfo = `${formatBytes(file.size)} • ${sourceMime} • ${width} × ${height}`;
 
   return { width, height, webpBlob, originalInfo };
 }
@@ -188,7 +227,7 @@ function canvasToBlob(canvas, type, quality) {
   });
 }
 
-function renderResult({ fileName, webpUrl, webpSize, dimensions, mime, originalInfo, quality }) {
+function renderResult({ displayName, downloadName, webpUrl, webpBlob, webpSize, dimensions, mime, originalInfo, quality }) {
   const clone = document.importNode(template.content, true);
   const article = clone.querySelector('.result');
   const image = clone.querySelector('.result__image');
@@ -202,6 +241,8 @@ function renderResult({ fileName, webpUrl, webpSize, dimensions, mime, originalI
   const qualityLabel = Number.isFinite(quality) ? `Quality ${quality}%` : '';
   const downloadSuffix = Number.isFinite(quality) ? `-q${quality}` : '';
 
+  const defaultCopyText = copyBtn.textContent.trim() || 'Copy WebP';
+
   const setCopyLabel = (text, shouldReset = true) => {
     copyBtn.textContent = text;
     if (copyResetId) {
@@ -209,30 +250,35 @@ function renderResult({ fileName, webpUrl, webpSize, dimensions, mime, originalI
     }
     if (shouldReset) {
       copyResetId = window.setTimeout(() => {
-        copyBtn.textContent = 'Copy URL';
+        copyBtn.textContent = defaultCopyText;
       }, 1200);
     }
   };
 
-  name.textContent = qualityLabel ? `${fileName} (${qualityLabel})` : fileName;
-  image.alt = `${fileName} preview in WebP format`;
+  name.textContent = qualityLabel ? `${displayName} (${qualityLabel})` : displayName;
+  image.alt = `${displayName} preview in WebP format`;
   image.src = webpUrl;
   downloadBtn.href = webpUrl;
-  downloadBtn.download = `${fileName}${downloadSuffix}.webp`;
+  downloadBtn.download = `${downloadName}${downloadSuffix}.webp`;
   original.textContent = originalInfo;
   converted.textContent = `${formatBytes(webpSize)} • ${mime} • ${dimensions}${qualityLabel ? ` • ${qualityLabel}` : ''}`;
   activeUrls.add(webpUrl);
 
-  copyBtn.addEventListener('click', async () => {
-    if (!webpUrl) return;
-    try {
-      await navigator.clipboard.writeText(webpUrl);
-      setCopyLabel('Copied!');
-    } catch (error) {
-      console.error(error);
-      setCopyLabel('Copy failed');
-    }
-  });
+  if (!isClipboardFileSupported()) {
+    copyBtn.disabled = true;
+    copyBtn.setAttribute('aria-disabled', 'true');
+    setCopyLabel('Copy unavailable', false);
+  } else {
+    copyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.write([new ClipboardItem({ [webpBlob.type]: webpBlob })]);
+        setCopyLabel('Copied!');
+      } catch (error) {
+        console.error(error);
+        setCopyLabel('Copy failed');
+      }
+    });
+  }
 
   results.append(article);
 }
@@ -246,6 +292,17 @@ function addStoredFile(file) {
   }
 }
 
+function createFileNameData(originalName) {
+  const baseName = (originalName || 'converted-image').replace(/\.[^/.]+$/, '');
+  const trimmed = baseName.trim().slice(0, 120);
+  const displayName = trimmed || 'converted-image';
+  const downloadName = displayName
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'converted-image';
+  return { displayName, downloadName };
+}
+
 function formatBytes(bytes) {
   if (!Number.isFinite(bytes)) return '0 B';
   if (bytes === 0) return '0 B';
@@ -253,6 +310,40 @@ function formatBytes(bytes) {
   const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
   const size = bytes / Math.pow(1024, index);
   return `${size.toFixed(size >= 10 || index === 0 ? 0 : 1)} ${units[index]}`;
+}
+
+async function detectMimeType(file) {
+  const slice = file.slice(0, 12);
+  const buffer = await slice.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+
+  if (
+    bytes.length >= 8 &&
+    bytes[0] === 0x89 &&
+    bytes[1] === 0x50 &&
+    bytes[2] === 0x4e &&
+    bytes[3] === 0x47 &&
+    bytes[4] === 0x0d &&
+    bytes[5] === 0x0a &&
+    bytes[6] === 0x1a &&
+    bytes[7] === 0x0a
+  ) {
+    return 'image/png';
+  }
+
+  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+    return 'image/jpeg';
+  }
+
+  return null;
+}
+
+function isClipboardFileSupported() {
+  return typeof navigator !== 'undefined'
+    && navigator.clipboard
+    && typeof navigator.clipboard.write === 'function'
+    && typeof window !== 'undefined'
+    && typeof window.ClipboardItem === 'function';
 }
 
 // Ensure keyboard focus works for dropzone label

@@ -13,6 +13,7 @@
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Just Image Converter | JPG &amp; PNG to WebP">
   <meta name="twitter:description" content="Free browser-based WebP converter with drag-and-drop uploads, quality control, and instant downloads.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -28,7 +29,7 @@
           <div class="dropzone__icon" aria-hidden="true">⬆️</div>
           <div class="dropzone__text">
             <strong>Drag &amp; drop</strong> your images here or click to browse<br>
-            <span class="dropzone__hint">Supported formats: JPG, PNG • Conversion happens locally</span>
+            <span class="dropzone__hint">Supported formats: JPG, PNG • Max 20 MB each • Conversion happens locally</span>
           </div>
           <input type="file" id="file-input" accept="image/jpeg,image/png" multiple hidden>
         </label>
@@ -98,7 +99,7 @@
         </dl>
         <div class="result__actions">
           <a class="button button--primary result__download" download>Download WebP</a>
-          <button class="button button--ghost result__copy" type="button">Copy URL</button>
+          <button class="button button--ghost result__copy" type="button">Copy WebP</button>
         </div>
       </div>
     </article>
