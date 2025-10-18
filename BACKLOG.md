@@ -1,4 +1,6 @@
 # Common backlog & ideas
 
-- [ ] Support dark mode
-- [ ] Generate shareable url (could work curl) 
+- [x] Support Dark mode
+- [ ] Add scaling support
+- [ ] Generate shareable url (that would work with curl) 
+- [ ] Add counter of conversions

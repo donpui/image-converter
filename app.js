@@ -7,12 +7,13 @@ const qualityValue = document.getElementById('quality-value');
 const clearBtn = document.getElementById('clear-btn');
 const regenerateBtn = document.getElementById('regenerate-btn');
 const supportMessage = document.getElementById('support-message');
+const themeToggle = document.getElementById('theme-toggle');
 
 const SUPPORTED_TYPES = new Set(['image/jpeg', 'image/png']);
-const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
-const MAX_FILE_SIZE_LABEL = '20 MB';
-const MAX_DIMENSION = 8000;
-const MAX_DIMENSION_LABEL = '8,000px';
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 20MB
+const MAX_FILE_SIZE_LABEL = '50 MB';
+const MAX_DIMENSION = 20000;
+const MAX_DIMENSION_LABEL = '20,000px';
 const MAX_CONVERSIONS_PER_WINDOW = 15;
 const RATE_LIMIT_WINDOW_MS = 30 * 1000;
 const RATE_LIMIT_MESSAGE = 'Rate limit reached. Please wait a moment before converting more images.';
@@ -261,9 +262,9 @@ function canvasToBlob(canvas, type, quality) {
 
 function renderResult({ displayName, downloadName, webpUrl, webpBlob, webpSize, dimensions, mime, originalInfo, quality }) {
   const clone = document.importNode(template.content, true);
-  const article = clone.querySelector('.result');
-  const image = clone.querySelector('.result__image');
-  const name = clone.querySelector('.result__name');
+  const article = clone.querySelector('.result-card');
+  const image = clone.querySelector('.result-card__image');
+  const name = clone.querySelector('.result-card__name');
   const original = clone.querySelector('.result__original');
   const converted = clone.querySelector('.result__converted');
   const downloadBtn = clone.querySelector('.result__download');
@@ -615,6 +616,58 @@ dropzone.addEventListener('keydown', (event) => {
     fileInput.click();
   }
 });
+
+// Paste support for images
+document.addEventListener('paste', async (event) => {
+  if (!isAppReady) return;
+  
+  const items = event.clipboardData?.items;
+  if (!items) return;
+  
+  const imageFiles = [];
+  
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    
+    // Check if the item is an image
+    if (item.type.startsWith('image/')) {
+      event.preventDefault(); // Prevent default paste behavior
+      
+      const file = item.getAsFile();
+      if (file) {
+        imageFiles.push(file);
+      }
+    }
+  }
+  
+  if (imageFiles.length > 0) {
+    announce(`Pasted ${imageFiles.length} image${imageFiles.length === 1 ? '' : 's'}`);
+    convertFiles(imageFiles);
+  }
+});
+
+// Theme toggle functionality
+function initTheme() {
+  // Check for saved theme preference or default to light mode
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+}
+
+function toggleTheme() {
+  const currentTheme = document.documentElement.getAttribute('data-theme');
+  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  
+  document.documentElement.setAttribute('data-theme', newTheme);
+  localStorage.setItem('theme', newTheme);
+}
+
+// Initialize theme before app loads
+initTheme();
+
+// Add theme toggle listener
+if (themeToggle) {
+  themeToggle.addEventListener('click', toggleTheme);
+}
 
 initializeApp().catch((error) => {
   console.error(error);
