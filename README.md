@@ -17,6 +17,13 @@ python3 -m http.server 8000
 # then open http://localhost:8000 in your browser
 ```
 
+## Testing
+```bash
+npm ci
+npx playwright install --with-deps
+npm test
+```
+
 ## Deploy to GitHub Pages
 ```bash
 # ensure your changes are committed

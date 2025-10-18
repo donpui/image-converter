@@ -1,0 +1,24 @@
+{
+  "name": "image-converter",
+  "version": "1.0.0",
+  "description": "Convert JPG and PNG images to modern WebP files—fast, private, and right in your browser. The app runs entirely on the client, so nothing ever leaves your device.",
+  "main": "app.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:update": "playwright test --update-snapshots"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/donpui/image-converter.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/donpui/image-converter/issues"
+  },
+  "homepage": "https://github.com/donpui/image-converter#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.56.1"
+  }
+}
