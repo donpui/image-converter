@@ -22,7 +22,15 @@ bun start
 python3 -m http.server 8000
 ```
 
-## Testing
+## Development
+
+### Linting
+```bash
+bun run lint        # check for code quality issues
+bun run lint:fix    # auto-fix issues where possible
+```
+
+### Testing
 ```bash
 bun install  # only needed once
 bun test     # runs unit tests

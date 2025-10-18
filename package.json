@@ -1,12 +1,15 @@
 {
   "name": "just-image-converter",
   "version": "1.0.0",
+  "type": "module",
   "description": "Convert JPG and PNG images to modern WebP files—fast, private, and right in your browser. The app runs entirely on the client, so nothing ever leaves your device.",
   "main": "app.js",
   "scripts": {
     "start": "bunx serve -p 3000",
     "dev": "bunx serve -p 3000",
-    "test": "bun test"
+    "test": "bun test",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "repository": {
     "type": "git",
@@ -19,5 +22,9 @@
     "url": "https://github.com/donpui/image-converter/issues"
   },
   "homepage": "https://github.com/donpui/image-converter#readme",
-  "devDependencies": {}
+  "devDependencies": {
+    "@eslint/js": "^9.38.0",
+    "eslint": "^9.38.0",
+    "globals": "^16.4.0"
+  }
 }

@@ -51,8 +51,8 @@ export function validateMimeType(mimeType, supportedTypes = SUPPORTED_TYPES) {
  * Formats bytes into human-readable string
  */
 export function formatBytes(bytes) {
-  if (!Number.isFinite(bytes)) return '0 B';
-  if (bytes === 0) return '0 B';
+  if (!Number.isFinite(bytes)) {return '0 B';}
+  if (bytes === 0) {return '0 B';}
   const units = ['B', 'KB', 'MB', 'GB'];
   const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
   const size = bytes / Math.pow(1024, index);

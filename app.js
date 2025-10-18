@@ -4,10 +4,7 @@ import {
   detectMimeType,
   validateFileSize,
   validateImageDimensions,
-  validateMimeType,
-  MAX_FILE_SIZE,
-  MAX_DIMENSION,
-  SUPPORTED_TYPES
+  validateMimeType
 } from './utils.js';
 
 const fileInput = document.getElementById('file-input');
@@ -21,8 +18,6 @@ const regenerateBtn = document.getElementById('regenerate-btn');
 const supportMessage = document.getElementById('support-message');
 const themeToggle = document.getElementById('theme-toggle');
 
-const MAX_FILE_SIZE_LABEL = '50 MB';
-const MAX_DIMENSION_LABEL = '20,000px';
 const MAX_CONVERSIONS_PER_WINDOW = 15;
 const RATE_LIMIT_WINDOW_MS = 30 * 1000;
 const RATE_LIMIT_MESSAGE = 'Rate limit reached. Please wait a moment before converting more images.';
@@ -40,7 +35,7 @@ regenerateBtn.hidden = true;
 regenerateBtn.disabled = true;
 
 fileInput.addEventListener('change', () => {
-  if (!isAppReady) return;
+  if (!isAppReady) {return;}
   if (fileInput.files?.length) {
     convertFiles(fileInput.files);
     fileInput.value = '';
@@ -48,7 +43,7 @@ fileInput.addEventListener('change', () => {
 });
 
 dropzone.addEventListener('dragover', (event) => {
-  if (!isAppReady) return;
+  if (!isAppReady) {return;}
   event.preventDefault();
   dropzone.classList.add('dropzone--active');
 });
@@ -58,7 +53,7 @@ dropzone.addEventListener('dragleave', () => {
 });
 
 dropzone.addEventListener('drop', (event) => {
-  if (!isAppReady) return;
+  if (!isAppReady) {return;}
   event.preventDefault();
   dropzone.classList.remove('dropzone--active');
   const files = event.dataTransfer?.files;
@@ -269,7 +264,9 @@ function canvasToBlob(canvas, type, quality) {
   });
 }
 
-function renderResult({ displayName, downloadName, webpUrl, webpBlob, webpSize, dimensions, mime, originalInfo, quality }) {
+function renderResult({
+  displayName, downloadName, webpUrl, webpBlob, webpSize, dimensions, mime, originalInfo, quality
+}) {
   const clone = document.importNode(template.content, true);
   const article = clone.querySelector('.result-card');
   const image = clone.querySelector('.result-card__image');
@@ -541,7 +538,7 @@ async function checkFeatureSupport() {
   try {
     const dataUrl = canvas.toDataURL('image/webp');
     supportsWebP = typeof dataUrl === 'string' && dataUrl.startsWith('data:image/webp');
-  } catch (error) {
+  } catch {
     supportsWebP = false;
   }
 
@@ -584,10 +581,10 @@ dropzone.addEventListener('keydown', (event) => {
 
 // Paste support for images
 document.addEventListener('paste', async (event) => {
-  if (!isAppReady) return;
+  if (!isAppReady) {return;}
   
   const items = event.clipboardData?.items;
-  if (!items) return;
+  if (!items) {return;}
   
   const imageFiles = [];
   
