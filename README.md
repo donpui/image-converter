@@ -29,12 +29,22 @@ bun test     # runs unit tests
 ```
 
 ## Deploy to GitHub Pages
-```bash
-# ensure your changes are committed
-git push origin main
 
-# publish (already configured for this repo)
+### Deploy Updates
+```bash
+# commit your changes
+git add .
+git commit -m "Your update message"
+
+# push to main (triggers automatic deployment)
+git push origin main
+```
+
+### Deploy GH pages
+```bash
+git switch gh-pages
+git merge main
 git push origin gh-pages
 ```
 
-GitHub Pages will host the site at: `https://donpui.github.io/image-converter/`
+Wait 1-2 minutes for the build to complete. Check deployment status under **Actions** tab.

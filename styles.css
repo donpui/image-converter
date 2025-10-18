@@ -862,6 +862,11 @@ body {
   color: #a5b4fc;
 }
 
+/* ========== SVG Utilities ========== */
+.svg-defs {
+  position: absolute;
+}
+
 /* ========== Accessibility ========== */
 .sr-only {
   position: absolute;
