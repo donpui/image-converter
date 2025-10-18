@@ -1,3 +1,15 @@
+import {
+  formatBytes,
+  createFileNameData,
+  detectMimeType,
+  validateFileSize,
+  validateImageDimensions,
+  validateMimeType,
+  MAX_FILE_SIZE,
+  MAX_DIMENSION,
+  SUPPORTED_TYPES
+} from './utils.js';
+
 const fileInput = document.getElementById('file-input');
 const dropzone = document.getElementById('dropzone');
 const results = document.getElementById('results');
@@ -9,10 +21,7 @@ const regenerateBtn = document.getElementById('regenerate-btn');
 const supportMessage = document.getElementById('support-message');
 const themeToggle = document.getElementById('theme-toggle');
 
-const SUPPORTED_TYPES = new Set(['image/jpeg', 'image/png']);
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 const MAX_FILE_SIZE_LABEL = '50 MB';
-const MAX_DIMENSION = 20000;
 const MAX_DIMENSION_LABEL = '20,000px';
 const MAX_CONVERSIONS_PER_WINDOW = 15;
 const RATE_LIMIT_WINDOW_MS = 30 * 1000;
@@ -350,26 +359,6 @@ function pruneConversionLog(now) {
   }
 }
 
-function createFileNameData(originalName) {
-  const baseName = (originalName || 'converted-image').replace(/\.[^/.]+$/, '');
-  const trimmed = baseName.trim().slice(0, 120);
-  const displayName = trimmed || 'converted-image';
-  const downloadName = displayName
-    .toLowerCase()
-    .replace(/[^a-z0-9_-]+/g, '-')
-    .replace(/^-+|-+$/g, '') || 'converted-image';
-  return { displayName, downloadName };
-}
-
-function formatBytes(bytes) {
-  if (!Number.isFinite(bytes)) return '0 B';
-  if (bytes === 0) return '0 B';
-  const units = ['B', 'KB', 'MB', 'GB'];
-  const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
-  const size = bytes / Math.pow(1024, index);
-  return `${size.toFixed(size >= 10 || index === 0 ? 0 : 1)} ${units[index]}`;
-}
-
 function populateChecksum(targetEl, blob) {
   if (!blob) {
     targetEl.textContent = 'Integrity unavailable';
@@ -441,37 +430,14 @@ function checksumWorker() {
   };
 }
 
-async function detectMimeType(file) {
-  const slice = file.slice(0, 12);
-  const buffer = await slice.arrayBuffer();
-  const bytes = new Uint8Array(buffer);
-
-  if (
-    bytes.length >= 8 &&
-    bytes[0] === 0x89 &&
-    bytes[1] === 0x50 &&
-    bytes[2] === 0x4e &&
-    bytes[3] === 0x47 &&
-    bytes[4] === 0x0d &&
-    bytes[5] === 0x0a &&
-    bytes[6] === 0x1a &&
-    bytes[7] === 0x0a
-  ) {
-    return 'image/png';
-  }
-
-  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
-    return 'image/jpeg';
-  }
-
-  return null;
-}
-
 async function enforcePreConversionGuards(file) {
-  if (file.size > MAX_FILE_SIZE) {
-    throw new Error(`${file.name} skipped (exceeds ${MAX_FILE_SIZE_LABEL}).`);
+  // Validate file size
+  const sizeValidation = validateFileSize(file.size);
+  if (!sizeValidation.valid) {
+    throw new Error(`${file.name} skipped (${sizeValidation.reason}).`);
   }
 
+  // Detect and validate MIME type
   let trustedMime = null;
   try {
     trustedMime = await detectMimeType(file);
@@ -479,17 +445,16 @@ async function enforcePreConversionGuards(file) {
     console.error(error);
   }
 
-  if (!trustedMime || !SUPPORTED_TYPES.has(trustedMime)) {
-    throw new Error(`${file.name} skipped (unsupported or spoofed format).`);
+  const mimeValidation = validateMimeType(trustedMime);
+  if (!mimeValidation.valid) {
+    throw new Error(`${file.name} skipped (${mimeValidation.reason}).`);
   }
 
+  // Read and validate image dimensions
   const { width, height } = await readImageDimensions(file);
-  if (!width || !height) {
-    throw new Error(`${file.name} skipped (could not read image dimensions).`);
-  }
-
-  if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
-    throw new Error(`${file.name} skipped (dimensions exceed ${MAX_DIMENSION_LABEL}).`);
+  const dimensionValidation = validateImageDimensions(width, height);
+  if (!dimensionValidation.valid) {
+    throw new Error(`${file.name} skipped (${dimensionValidation.reason}).`);
   }
 
   guardMetadata.set(file, { mime: trustedMime, width, height });

@@ -1,5 +1,18 @@
 import { describe, test, expect, beforeEach } from 'bun:test';
-import { formatBytes, createFileNameData, detectMimeType, registerConversion, isRateLimited, resetRateLimiting } from '../utils.js';
+import {
+  formatBytes,
+  createFileNameData,
+  detectMimeType,
+  registerConversion,
+  isRateLimited,
+  resetRateLimiting,
+  validateFileSize,
+  validateImageDimensions,
+  validateMimeType,
+  MAX_FILE_SIZE,
+  MAX_DIMENSION,
+  SUPPORTED_TYPES
+} from '../utils.js';
 
 describe('formatBytes', () => {
 
@@ -98,6 +111,140 @@ describe('Rate limiting', () => {
     
     // Should not be rate limited with only 3 conversions
     expect(isRateLimited()).toBe(false);
+  });
+});
+
+describe('validateFileSize', () => {
+  test('accepts valid file sizes', () => {
+    const result = validateFileSize(1024); // 1KB
+    expect(result.valid).toBe(true);
+  });
+
+  test('accepts files at the limit', () => {
+    const result = validateFileSize(MAX_FILE_SIZE);
+    expect(result.valid).toBe(true);
+  });
+
+  test('rejects files exceeding the limit', () => {
+    const result = validateFileSize(MAX_FILE_SIZE + 1);
+    expect(result.valid).toBe(false);
+    expect(result.reason).toContain('exceeds');
+  });
+
+  test('rejects invalid file sizes', () => {
+    expect(validateFileSize(NaN).valid).toBe(false);
+    expect(validateFileSize(-1).valid).toBe(false);
+    expect(validateFileSize(Infinity).valid).toBe(false);
+  });
+
+  test('uses custom max size when provided', () => {
+    const customMax = 1024; // 1KB
+    const result = validateFileSize(2048, customMax);
+    expect(result.valid).toBe(false);
+    expect(result.reason).toContain('1.0 KB');
+  });
+
+  test('accepts zero-byte files', () => {
+    const result = validateFileSize(0);
+    expect(result.valid).toBe(true);
+  });
+});
+
+describe('validateImageDimensions', () => {
+  test('accepts valid dimensions', () => {
+    const result = validateImageDimensions(1920, 1080);
+    expect(result.valid).toBe(true);
+  });
+
+  test('accepts dimensions at the limit', () => {
+    const result = validateImageDimensions(MAX_DIMENSION, MAX_DIMENSION);
+    expect(result.valid).toBe(true);
+  });
+
+  test('rejects width exceeding limit', () => {
+    const result = validateImageDimensions(MAX_DIMENSION + 1, 1080);
+    expect(result.valid).toBe(false);
+    expect(result.reason).toContain('exceed');
+  });
+
+  test('rejects height exceeding limit', () => {
+    const result = validateImageDimensions(1920, MAX_DIMENSION + 1);
+    expect(result.valid).toBe(false);
+    expect(result.reason).toContain('exceed');
+  });
+
+  test('rejects invalid dimensions', () => {
+    expect(validateImageDimensions(0, 1080).valid).toBe(false);
+    expect(validateImageDimensions(1920, 0).valid).toBe(false);
+    expect(validateImageDimensions(-1, 1080).valid).toBe(false);
+    expect(validateImageDimensions(1920, -1).valid).toBe(false);
+    expect(validateImageDimensions(NaN, 1080).valid).toBe(false);
+    expect(validateImageDimensions(1920, NaN).valid).toBe(false);
+  });
+
+  test('uses custom max dimension when provided', () => {
+    const customMax = 1000;
+    const result = validateImageDimensions(1920, 1080, customMax);
+    expect(result.valid).toBe(false);
+    expect(result.reason).toContain('1,000');
+  });
+
+  test('accepts square images', () => {
+    const result = validateImageDimensions(1000, 1000);
+    expect(result.valid).toBe(true);
+  });
+});
+
+describe('validateMimeType', () => {
+  test('accepts supported MIME types', () => {
+    expect(validateMimeType('image/jpeg').valid).toBe(true);
+    expect(validateMimeType('image/png').valid).toBe(true);
+  });
+
+  test('rejects unsupported MIME types', () => {
+    const result = validateMimeType('image/gif');
+    expect(result.valid).toBe(false);
+    expect(result.reason).toContain('Unsupported');
+  });
+
+  test('rejects invalid MIME type values', () => {
+    expect(validateMimeType(null).valid).toBe(false);
+    expect(validateMimeType(undefined).valid).toBe(false);
+    expect(validateMimeType('').valid).toBe(false);
+  });
+
+  test('rejects non-string MIME types', () => {
+    // @ts-ignore - testing invalid input
+    expect(validateMimeType(123).valid).toBe(false);
+    // @ts-ignore - testing invalid input
+    expect(validateMimeType({}).valid).toBe(false);
+  });
+
+  test('uses custom supported types when provided', () => {
+    const customTypes = new Set(['image/webp']);
+    expect(validateMimeType('image/webp', customTypes).valid).toBe(true);
+    expect(validateMimeType('image/jpeg', customTypes).valid).toBe(false);
+  });
+
+  test('is case-sensitive', () => {
+    const result = validateMimeType('IMAGE/JPEG');
+    expect(result.valid).toBe(false);
+  });
+});
+
+describe('Constants', () => {
+  test('MAX_FILE_SIZE is 50MB', () => {
+    expect(MAX_FILE_SIZE).toBe(50 * 1024 * 1024);
+  });
+
+  test('MAX_DIMENSION is 20000', () => {
+    expect(MAX_DIMENSION).toBe(20000);
+  });
+
+  test('SUPPORTED_TYPES contains expected types', () => {
+    expect(SUPPORTED_TYPES.has('image/jpeg')).toBe(true);
+    expect(SUPPORTED_TYPES.has('image/png')).toBe(true);
+    expect(SUPPORTED_TYPES.size).toBe(2);
   });
 });
 

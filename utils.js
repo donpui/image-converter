@@ -3,6 +3,53 @@
  * Can be tested in Node/Bun environment
  */
 
+// Constants (exported for testing)
+export const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+export const MAX_DIMENSION = 20000;
+export const SUPPORTED_TYPES = new Set(['image/jpeg', 'image/png']);
+
+/**
+ * Validates if a file size is within acceptable limits
+ */
+export function validateFileSize(fileSize, maxSize = MAX_FILE_SIZE) {
+  if (!Number.isFinite(fileSize) || fileSize < 0) {
+    return { valid: false, reason: 'Invalid file size' };
+  }
+  if (fileSize > maxSize) {
+    return { valid: false, reason: `File size exceeds ${formatBytes(maxSize)}` };
+  }
+  return { valid: true };
+}
+
+/**
+ * Validates if image dimensions are within acceptable limits
+ */
+export function validateImageDimensions(width, height, maxDimension = MAX_DIMENSION) {
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    return { valid: false, reason: 'Invalid dimensions' };
+  }
+  if (width > maxDimension || height > maxDimension) {
+    return { valid: false, reason: `Dimensions exceed ${maxDimension.toLocaleString()}px` };
+  }
+  return { valid: true };
+}
+
+/**
+ * Validates if a MIME type is supported
+ */
+export function validateMimeType(mimeType, supportedTypes = SUPPORTED_TYPES) {
+  if (!mimeType || typeof mimeType !== 'string') {
+    return { valid: false, reason: 'Invalid MIME type' };
+  }
+  if (!supportedTypes.has(mimeType)) {
+    return { valid: false, reason: 'Unsupported or spoofed format' };
+  }
+  return { valid: true };
+}
+
+/**
+ * Formats bytes into human-readable string
+ */
 export function formatBytes(bytes) {
   if (!Number.isFinite(bytes)) return '0 B';
   if (bytes === 0) return '0 B';
