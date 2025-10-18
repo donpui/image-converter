@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy | Just Image Converter</title>
+  <meta name="description" content="Privacy policy for Just Image Converter. Learn how we protect your data with 100% client-side processing.">
+  <meta name="robots" content="index,follow">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+  <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), accelerometer=(), gyroscope=(), fullscreen=(self)">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1>Privacy Policy</h1>
+      <p><a href="index.html" class="back-link">← Back to Converter</a></p>
+    </header>
+
+    <main class="privacy-page">
+      <section class="privacy-section">
+        <h2>Privacy First</h2>
+        <p><strong>Just Image Converter</strong> is designed with your privacy as the top priority. We follow a simple principle: what happens in your browser, stays in your browser.</p>
+      </section>
+
+      <section class="privacy-section">
+        <h2>No Data Collection</h2>
+        <p>We do not collect, store, transmit, or process any of your files or personal data. Period.</p>
+        <ul>
+          <li><strong>No file uploads:</strong> All image processing happens locally in your web browser using JavaScript</li>
+          <li><strong>No server storage:</strong> Your images never leave your device</li>
+          <li><strong>No tracking:</strong> We don't use analytics, cookies, or tracking scripts</li>
+          <li><strong>No accounts:</strong> No sign-ups, logins, or user databases</li>
+          <li><strong>No third parties:</strong> No CDNs, external APIs, or third-party services</li>
+        </ul>
+      </section>
+
+      <section class="privacy-section">
+        <h2>How It Works</h2>
+        <p>When you use Just Image Converter:</p>
+        <ol>
+          <li>You select an image file from your device</li>
+          <li>Your browser reads the file using the File API</li>
+          <li>JavaScript converts the image to WebP format using Canvas API</li>
+          <li>The converted image is stored temporarily in your browser's memory</li>
+          <li>You download the result directly to your device</li>
+          <li>When you close the page, all temporary data is cleared</li>
+        </ol>
+        <p><strong>At no point is your data sent to any server or external service.</strong></p>
+      </section>
+
+      <section class="privacy-section">
+        <h2>Data Processing Location</h2>
+        <p>All image processing occurs:</p>
+        <ul>
+          <li>In your web browser (Chrome, Firefox, Safari, Edge, etc.)</li>
+          <li>On your device (computer, tablet, or phone)</li>
+          <li>Using client-side JavaScript code that you can inspect</li>
+        </ul>
+        <p>The application is hosted on GitHub Pages as static HTML, CSS, and JavaScript files. GitHub Pages serves these files but has no ability to access, process, or store your images.</p>
+      </section>
+
+      <section class="privacy-section">
+        <h2>Technical Safeguards</h2>
+        <p>We've implemented multiple security measures:</p>
+        <ul>
+          <li><strong>Content Security Policy (CSP):</strong> Prevents unauthorized scripts from running</li>
+          <li><strong>No external resources:</strong> All code is served from the same domain</li>
+          <li><strong>MIME type validation:</strong> Ensures only image files are processed</li>
+          <li><strong>File size limits:</strong> Prevents memory exhaustion attacks</li>
+          <li><strong>Rate limiting:</strong> Protects your browser from excessive processing</li>
+        </ul>
+      </section>
+
+      <section class="privacy-section">
+        <h2>Compliance</h2>
+        <p>Because we don't collect any personal data, Just Image Converter is inherently compliant with:</p>
+        <ul>
+          <li><strong>GDPR</strong> (General Data Protection Regulation)</li>
+          <li><strong>CCPA</strong> (California Consumer Privacy Act)</li>
+          <li><strong>PIPEDA</strong> (Personal Information Protection and Electronic Documents Act)</li>
+          <li>Other international privacy regulations</li>
+        </ul>
+        <p>No consent banners, privacy settings, or data requests are necessary because there is no data collection to consent to.</p>
+      </section>
+
+      <section class="privacy-section">
+        <h2>Open Source</h2>
+        <p>The complete source code is available on <a href="https://github.com/donpui/image-converter" target="_blank" rel="noopener noreferrer">GitHub</a>. You can review every line of code to verify our privacy claims.</p>
+        <p>We welcome security audits and privacy reviews from the community.</p>
+      </section>
+
+      <section class="privacy-section">
+        <h2>Browser Permissions</h2>
+        <p>Just Image Converter only uses standard web APIs:</p>
+        <ul>
+          <li><strong>File API:</strong> To read files you explicitly select</li>
+          <li><strong>Canvas API:</strong> To process and convert images</li>
+          <li><strong>Blob API:</strong> To create downloadable files</li>
+          <li><strong>Clipboard API:</strong> To copy images (only when you click "Copy")</li>
+        </ul>
+        <p>We explicitly disable unnecessary permissions like camera, microphone, and geolocation.</p>
+      </section>
+
+      <section class="privacy-section">
+        <h2>Changes to This Policy</h2>
+        <p>If we make changes to this privacy policy, we will update this page. Since we don't collect contact information, we cannot notify you directly of changes.</p>
+        <p><strong>Last updated:</strong> January 2025</p>
+      </section>
+
+      <section class="privacy-section">
+        <h2>Questions?</h2>
+        <p>If you have questions about this privacy policy or want to verify our claims, please:</p>
+        <ul>
+          <li>Review the <a href="https://github.com/donpui/image-converter" target="_blank" rel="noopener noreferrer">source code on GitHub</a></li>
+          <li>Open an issue on the GitHub repository</li>
+          <li>Use your browser's developer tools to inspect network activity (you'll see zero requests to external servers)</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p><a href="index.html">Back to Just Image Converter</a></p>
+      <p>&copy; 2025 Just Image Converter. Built with privacy in mind.</p>
+    </footer>
+  </div>
+</body>
+</html>
+

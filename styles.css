@@ -297,6 +297,18 @@ body {
   line-height: 1.6;
 }
 
+.privacy__content a {
+  color: var(--color-accent);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color var(--transition);
+}
+
+.privacy__content a:hover {
+  color: var(--color-text);
+  text-decoration: underline;
+}
+
 .result {
   display: grid;
   grid-template-columns: minmax(160px, 200px) 1fr;
@@ -370,6 +382,123 @@ body {
   font-size: 0.85rem;
   color: var(--color-muted);
   text-align: center;
+  padding-top: 16px;
+}
+
+.footer__content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.footer__content p {
+  margin: 0;
+}
+
+.footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 0.9rem;
+}
+
+.footer__links a {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+
+.footer__links a:hover {
+  color: var(--color-text);
+  text-decoration: underline;
+}
+
+.back-link {
+  color: var(--color-accent);
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: color var(--transition);
+}
+
+.back-link:hover {
+  color: var(--color-text);
+  text-decoration: underline;
+}
+
+.privacy-page {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.privacy-section {
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(31, 36, 48, 0.06);
+  background: #fff;
+  padding: clamp(24px, 5vw, 32px);
+  box-shadow: 0 6px 18px rgba(31, 36, 48, 0.05);
+}
+
+.privacy-section h2 {
+  margin: 0 0 16px;
+  font-size: clamp(1.4rem, 2.4vw, 1.8rem);
+  color: var(--color-text);
+}
+
+.privacy-section h3 {
+  margin: 20px 0 12px;
+  font-size: 1.2rem;
+  color: var(--color-text);
+}
+
+.privacy-section p {
+  margin: 0 0 16px;
+  color: var(--color-muted);
+  line-height: 1.7;
+}
+
+.privacy-section p:last-child {
+  margin-bottom: 0;
+}
+
+.privacy-section ul,
+.privacy-section ol {
+  margin: 0 0 16px;
+  padding-left: 24px;
+  color: var(--color-muted);
+  line-height: 1.7;
+}
+
+.privacy-section ul:last-child,
+.privacy-section ol:last-child {
+  margin-bottom: 0;
+}
+
+.privacy-section li {
+  margin-bottom: 8px;
+}
+
+.privacy-section li:last-child {
+  margin-bottom: 0;
+}
+
+.privacy-section a {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+
+.privacy-section a:hover {
+  color: var(--color-text);
+  text-decoration: underline;
+}
+
+.privacy-section strong {
+  color: var(--color-text);
+  font-weight: 600;
 }
 
 .sr-only {
