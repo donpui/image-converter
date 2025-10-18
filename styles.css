@@ -187,12 +187,13 @@ body {
 }
 
 .button--secondary {
-  background: #eef1ff;
-  color: var(--color-accent);
+  background: #e3e8ff;
+  color: #2847cc;
 }
 
 .button--secondary:hover {
-  background: rgba(53, 95, 255, 0.15);
+  background: #d5dcff;
+  color: #1f3aa8;
 }
 
 .button--ghost {

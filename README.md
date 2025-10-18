@@ -14,18 +14,18 @@ Convert JPG and PNG images to modern WebP files—fast, private, and right in yo
 
 ## Quick Start
 ```bash
-# install dependencies (none required)
+# serve locally with Bun (recommended)
+bun start
+# then open http://localhost:3000 in your browser
 
-# serve locally (any static file server works)
+# alternative: use any static file server
 python3 -m http.server 8000
-# then open http://localhost:8000 in your browser
 ```
 
 ## Testing
 ```bash
-npm ci
-npx playwright install --with-deps
-npm test
+bun install  # only needed once
+bun test     # runs unit tests
 ```
 
 ## Deploy to GitHub Pages
