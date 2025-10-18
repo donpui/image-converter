@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Just Image Converter | JPG &amp; PNG to WebP</title>
+  <meta name="description" content="Convert JPG and PNG images to WebP directly in your browser. Control quality, regenerate versions instantly, and keep every file on your device.">
+  <meta name="robots" content="index,follow">
+  <meta property="og:title" content="Just Image Converter | JPG &amp; PNG to WebP">
+  <meta property="og:description" content="Drag, drop, and convert images to WebP locally with adjustable quality and one-click downloads.">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="en_US">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Just Image Converter | JPG &amp; PNG to WebP">
+  <meta name="twitter:description" content="Free browser-based WebP converter with drag-and-drop uploads, quality control, and instant downloads.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1>Just Image Converter</h1>
+      <p>Convert your JPG or PNG images to WebP directly in your browser. No uploads required. No cloud storage</p>
+    </header>
+
+    <main class="converter">
+      <section class="upload">
+        <label class="dropzone" for="file-input" id="dropzone" tabindex="0" role="button">
+          <div class="dropzone__icon" aria-hidden="true">⬆️</div>
+          <div class="dropzone__text">
+            <strong>Drag &amp; drop</strong> your images here or click to browse<br>
+            <span class="dropzone__hint">Supported formats: JPG, PNG • Conversion happens locally</span>
+          </div>
+          <input type="file" id="file-input" accept="image/jpeg,image/png" multiple hidden>
+        </label>
+
+        <div class="controls">
+          <div class="control">
+            <label for="quality">Quality</label>
+            <input type="range" id="quality" min="50" max="100" value="90">
+            <span id="quality-value">90%</span>
+          </div>
+          <div class="controls__actions">
+            <button id="regenerate-btn" class="button button--primary" type="button" hidden disabled>Regenerate</button>
+            <button id="clear-btn" class="button button--secondary" type="button">Clear</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="results" id="results" aria-live="polite"></section>
+    </main>
+
+    <section class="info" aria-labelledby="info-title">
+      <div class="info__content">
+        <h2 id="info-title">Convert images to WebP in seconds</h2>
+        <p>Just Image Converter is a browser-based tool that lets you optimize JPG and PNG assets before you upload them anywhere. Everything runs locally, so your files never leave your device.</p>
+        <div class="info__grid">
+          <div>
+            <h3>How it works</h3>
+            <ol>
+              <li>Drop one or more JPG or PNG files into the converter or browse to upload.</li>
+              <li>Select the WebP quality that matches your performance and visual goals.</li>
+              <li>Download optimized files or regenerate fresh versions with a new quality setting.</li>
+            </ol>
+          </div>
+          <div>
+            <h3>Why choose WebP</h3>
+            <ul>
+              <li>Delivers smaller file sizes for faster pages and improved Core Web Vitals.</li>
+              <li>Maintains impressive visual fidelity with modern compression.</li>
+              <li>Supported by every major browser on desktop and mobile.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <p>Built with plain HTML, CSS, and JavaScript. Perfect for GitHub Pages hosting.</p>
+    </footer>
+  </div>
+
+  <template id="result-template">
+    <article class="result">
+      <div class="result__preview">
+        <img alt="" class="result__image">
+      </div>
+      <div class="result__info">
+        <h3 class="result__name"></h3>
+        <dl class="result__meta">
+          <div>
+            <dt>Original</dt>
+            <dd class="result__original"></dd>
+          </div>
+          <div>
+            <dt>WebP</dt>
+            <dd class="result__converted"></dd>
+          </div>
+        </dl>
+        <div class="result__actions">
+          <a class="button button--primary result__download" download>Download WebP</a>
+          <button class="button button--ghost result__copy" type="button">Copy URL</button>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Just Image Converter",
+    "applicationCategory": "WebApplication",
+    "operatingSystem": "Any",
+    "description": "Convert JPG and PNG images to WebP directly in your browser with adjustable quality and instant downloads.",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "featureList": [
+      "Drag-and-drop uploads for JPG and PNG files",
+      "Adjustable WebP quality slider",
+      "Regenerate files without re-uploading",
+      "Instant downloads and clipboard sharing"
+    ]
+  }
+  </script>
+  <script src="app.js" type="module"></script>
+</body>
+</html>
