@@ -6,19 +6,31 @@ const qualitySlider = document.getElementById('quality');
 const qualityValue = document.getElementById('quality-value');
 const clearBtn = document.getElementById('clear-btn');
 const regenerateBtn = document.getElementById('regenerate-btn');
+const supportMessage = document.getElementById('support-message');
 
 const SUPPORTED_TYPES = new Set(['image/jpeg', 'image/png']);
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 const MAX_FILE_SIZE_LABEL = '20 MB';
+const MAX_DIMENSION = 8000;
+const MAX_DIMENSION_LABEL = '8,000px';
+const MAX_CONVERSIONS_PER_WINDOW = 15;
+const RATE_LIMIT_WINDOW_MS = 30 * 1000;
+const RATE_LIMIT_MESSAGE = 'Rate limit reached. Please wait a moment before converting more images.';
+
 const activeUrls = new Set();
 const storedFiles = [];
+const conversionLog = [];
+const guardMetadata = new WeakMap();
 const regenerateDefaultLabel = regenerateBtn ? regenerateBtn.textContent : 'Regenerate';
+
+let isAppReady = false;
 
 qualityValue.textContent = `${qualitySlider.value}%`;
 regenerateBtn.hidden = true;
 regenerateBtn.disabled = true;
 
 fileInput.addEventListener('change', () => {
+  if (!isAppReady) return;
   if (fileInput.files?.length) {
     convertFiles(fileInput.files);
     fileInput.value = '';
@@ -26,6 +38,7 @@ fileInput.addEventListener('change', () => {
 });
 
 dropzone.addEventListener('dragover', (event) => {
+  if (!isAppReady) return;
   event.preventDefault();
   dropzone.classList.add('dropzone--active');
 });
@@ -35,6 +48,7 @@ dropzone.addEventListener('dragleave', () => {
 });
 
 dropzone.addEventListener('drop', (event) => {
+  if (!isAppReady) return;
   event.preventDefault();
   dropzone.classList.remove('dropzone--active');
   const files = event.dataTransfer?.files;
@@ -52,6 +66,7 @@ clearBtn.addEventListener('click', () => {
   storedFiles.length = 0;
   activeUrls.forEach((url) => URL.revokeObjectURL(url));
   activeUrls.clear();
+  conversionLog.length = 0;
   regenerateBtn.textContent = regenerateDefaultLabel;
   regenerateBtn.disabled = true;
   regenerateBtn.hidden = true;
@@ -59,7 +74,7 @@ clearBtn.addEventListener('click', () => {
 });
 
 regenerateBtn.addEventListener('click', async () => {
-  if (!storedFiles.length) {
+  if (!isAppReady || !storedFiles.length) {
     return;
   }
 
@@ -70,27 +85,27 @@ regenerateBtn.addEventListener('click', async () => {
   regenerateBtn.textContent = 'Regenerating...';
 
   let successCount = 0;
+  let rateLimitNotified = false;
 
   for (const file of storedFiles) {
-    if (file.size > MAX_FILE_SIZE) {
-      announce(`${file.name} skipped during regenerate (exceeds ${MAX_FILE_SIZE_LABEL}).`);
-      continue;
-    }
-
-    let trustedMime;
-    try {
-      trustedMime = await detectMimeType(file);
-    } catch (error) {
-      console.error(error);
-    }
-
-    if (!trustedMime || !SUPPORTED_TYPES.has(trustedMime)) {
-      announce(`${file.name} skipped during regenerate (unsupported or spoofed format).`);
-      continue;
+    if (!hasConversionCapacity()) {
+      if (!rateLimitNotified) {
+        announce(RATE_LIMIT_MESSAGE);
+        rateLimitNotified = true;
+      }
+      break;
     }
 
     try {
-      const { width, height, webpBlob, originalInfo } = await convertFile(file, quality, trustedMime);
+      await enforcePreConversionGuards(file);
+      if (!reserveConversionSlot()) {
+        if (!rateLimitNotified) {
+          announce(RATE_LIMIT_MESSAGE);
+          rateLimitNotified = true;
+        }
+        break;
+      }
+      const { width, height, webpBlob, originalInfo } = await convertFile(file, quality);
       const webpUrl = URL.createObjectURL(webpBlob);
       const { displayName, downloadName } = createFileNameData(file.name);
       renderResult({
@@ -107,7 +122,11 @@ regenerateBtn.addEventListener('click', async () => {
       successCount += 1;
     } catch (error) {
       console.error(error);
-      announce(`Failed to regenerate ${file.name}.`);
+      if (error instanceof Error) {
+        announce(error.message);
+      } else {
+        announce(`Could not regenerate ${file.name}.`);
+      }
     }
   }
 
@@ -129,30 +148,36 @@ function announce(message) {
 }
 
 async function convertFiles(fileList) {
+  if (!isAppReady) {
+    announce('Conversion unavailable in this browser.');
+    return;
+  }
+
   const files = Array.from(fileList);
   const qualityPercent = Number(qualitySlider.value);
   const quality = qualityPercent / 100;
 
+  let rateLimitNotified = false;
+
   for (const file of files) {
-    if (file.size > MAX_FILE_SIZE) {
-      announce(`${file.name} skipped (exceeds ${MAX_FILE_SIZE_LABEL}).`);
-      continue;
-    }
-
-    let trustedMime;
-    try {
-      trustedMime = await detectMimeType(file);
-    } catch (error) {
-      console.error(error);
-    }
-
-    if (!trustedMime || !SUPPORTED_TYPES.has(trustedMime)) {
-      announce(`${file.name} skipped (unsupported or spoofed format).`);
-      continue;
+    if (!hasConversionCapacity()) {
+      if (!rateLimitNotified) {
+        announce(RATE_LIMIT_MESSAGE);
+        rateLimitNotified = true;
+      }
+      break;
     }
 
     try {
-      const { width, height, webpBlob, originalInfo } = await convertFile(file, quality, trustedMime);
+      await enforcePreConversionGuards(file);
+      if (!reserveConversionSlot()) {
+        if (!rateLimitNotified) {
+          announce(RATE_LIMIT_MESSAGE);
+          rateLimitNotified = true;
+        }
+        break;
+      }
+      const { width, height, webpBlob, originalInfo } = await convertFile(file, quality);
       const webpUrl = URL.createObjectURL(webpBlob);
       const { displayName, downloadName } = createFileNameData(file.name);
       renderResult({
@@ -169,7 +194,12 @@ async function convertFiles(fileList) {
       addStoredFile(file);
     } catch (error) {
       console.error(error);
-      announce(`Something went wrong converting ${file.name}.`);
+      if (error instanceof Error) {
+        announce(error.message);
+      } else {
+        announce(`Could not convert ${file.name}.`);
+      }
+      continue;
     }
   }
 
@@ -180,29 +210,31 @@ async function convertFiles(fileList) {
   }
 }
 
-async function convertFile(file, quality, trustedMime) {
-  const effectiveMime = trustedMime || (await detectMimeType(file));
-  const { img, width, height } = await loadImage(file);
+async function convertFile(file, quality) {
+  const meta = guardMetadata.get(file) || {};
+  const { img, width, height, mime } = await loadImage(file);
+  const outputWidth = meta.width || width;
+  const outputHeight = meta.height || height;
   const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
+  canvas.width = outputWidth;
+  canvas.height = outputHeight;
   const context = canvas.getContext('2d');
 
   if (!context) {
     throw new Error('Canvas 2D context unavailable.');
   }
 
-  context.drawImage(img, 0, 0, width, height);
+  context.drawImage(img, 0, 0, outputWidth, outputHeight);
   const webpBlob = await canvasToBlob(canvas, 'image/webp', quality);
 
   if (!webpBlob) {
     throw new Error('Browser failed to create WebP blob.');
   }
 
-  const sourceMime = effectiveMime || file.type || 'unknown';
-  const originalInfo = `${formatBytes(file.size)} • ${sourceMime} • ${width} × ${height}`;
+  const sourceMime = meta.mime || mime || file.type || 'unknown';
+  const originalInfo = `${formatBytes(file.size)} • ${sourceMime} • ${outputWidth} × ${outputHeight}`;
 
-  return { width, height, webpBlob, originalInfo };
+  return { width: outputWidth, height: outputHeight, webpBlob, originalInfo };
 }
 
 function loadImage(file) {
@@ -211,7 +243,7 @@ function loadImage(file) {
     const img = new Image();
     img.onload = () => {
       URL.revokeObjectURL(url);
-      resolve({ img, width: img.naturalWidth || img.width, height: img.naturalHeight || img.height });
+      resolve({ img, width: img.naturalWidth || img.width, height: img.naturalHeight || img.height, mime: file.type });
     };
     img.onerror = (error) => {
       URL.revokeObjectURL(url);
@@ -236,6 +268,7 @@ function renderResult({ displayName, downloadName, webpUrl, webpBlob, webpSize, 
   const converted = clone.querySelector('.result__converted');
   const downloadBtn = clone.querySelector('.result__download');
   const copyBtn = clone.querySelector('.result__copy');
+  const checksum = clone.querySelector('.result__checksum');
 
   let copyResetId;
   const qualityLabel = Number.isFinite(quality) ? `Quality ${quality}%` : '';
@@ -262,6 +295,7 @@ function renderResult({ displayName, downloadName, webpUrl, webpBlob, webpSize, 
   downloadBtn.download = `${downloadName}${downloadSuffix}.webp`;
   original.textContent = originalInfo;
   converted.textContent = `${formatBytes(webpSize)} • ${mime} • ${dimensions}${qualityLabel ? ` • ${qualityLabel}` : ''}`;
+  checksum.textContent = 'Calculating…';
   activeUrls.add(webpUrl);
 
   if (!isClipboardFileSupported()) {
@@ -281,6 +315,8 @@ function renderResult({ displayName, downloadName, webpUrl, webpBlob, webpSize, 
   }
 
   results.append(article);
+  registerObjectUrlCleanup(article, webpUrl);
+  populateChecksum(checksum, webpBlob);
 }
 
 function addStoredFile(file) {
@@ -289,6 +325,27 @@ function addStoredFile(file) {
   );
   if (!exists) {
     storedFiles.push(file);
+  }
+}
+
+function hasConversionCapacity() {
+  pruneConversionLog(Date.now());
+  return conversionLog.length < MAX_CONVERSIONS_PER_WINDOW;
+}
+
+function reserveConversionSlot() {
+  const now = Date.now();
+  pruneConversionLog(now);
+  if (conversionLog.length >= MAX_CONVERSIONS_PER_WINDOW) {
+    return false;
+  }
+  conversionLog.push(now);
+  return true;
+}
+
+function pruneConversionLog(now) {
+  while (conversionLog.length && now - conversionLog[0] > RATE_LIMIT_WINDOW_MS) {
+    conversionLog.shift();
   }
 }
 
@@ -310,6 +367,77 @@ function formatBytes(bytes) {
   const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
   const size = bytes / Math.pow(1024, index);
   return `${size.toFixed(size >= 10 || index === 0 ? 0 : 1)} ${units[index]}`;
+}
+
+function populateChecksum(targetEl, blob) {
+  if (!blob) {
+    targetEl.textContent = 'Integrity unavailable';
+    return;
+  }
+
+  if (
+    typeof crypto === 'undefined'
+    || !crypto
+    || !crypto.subtle
+    || typeof targetEl === 'undefined'
+    || typeof Worker === 'undefined'
+    || typeof URL === 'undefined'
+    || typeof Blob === 'undefined'
+  ) {
+    targetEl.textContent = 'Integrity unavailable';
+    return;
+  }
+
+  const statusEl = document.createElement('span');
+  statusEl.textContent = 'Calculating…';
+  targetEl.replaceChildren(statusEl);
+
+  const workerSource = `(${checksumWorker.toString()})();`;
+  const workerUrl = URL.createObjectURL(new Blob([workerSource], { type: 'text/javascript' }));
+  const worker = new Worker(workerUrl);
+  const cleanup = () => {
+    worker.terminate();
+    URL.revokeObjectURL(workerUrl);
+  };
+
+  worker.onmessage = (event) => {
+    if (event.data?.type === 'result') {
+      targetEl.textContent = `SHA-256: ${event.data.hash.substring(0, 32)}…`;
+    } else if (event.data?.type === 'error') {
+      console.error(event.data.error);
+      targetEl.textContent = 'Integrity unavailable';
+    }
+    cleanup();
+  };
+
+  worker.onerror = (event) => {
+    console.error(event.message || event);
+    targetEl.textContent = 'Integrity unavailable';
+    cleanup();
+  };
+
+  worker.postMessage({ blob });
+}
+
+function checksumWorker() {
+  self.onmessage = async (event) => {
+    const { blob } = event.data || {};
+    if (!blob) {
+      self.postMessage({ type: 'error', error: 'Missing blob' });
+      return;
+    }
+
+    try {
+      const buffer = await blob.arrayBuffer();
+      const digest = await crypto.subtle.digest('SHA-256', buffer);
+      const hash = Array.from(new Uint8Array(digest))
+        .map((byte) => byte.toString(16).padStart(2, '0'))
+        .join('');
+      self.postMessage({ type: 'result', hash });
+    } catch (error) {
+      self.postMessage({ type: 'error', error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  };
 }
 
 async function detectMimeType(file) {
@@ -338,6 +466,79 @@ async function detectMimeType(file) {
   return null;
 }
 
+async function enforcePreConversionGuards(file) {
+  if (file.size > MAX_FILE_SIZE) {
+    throw new Error(`${file.name} skipped (exceeds ${MAX_FILE_SIZE_LABEL}).`);
+  }
+
+  let trustedMime = null;
+  try {
+    trustedMime = await detectMimeType(file);
+  } catch (error) {
+    console.error(error);
+  }
+
+  if (!trustedMime || !SUPPORTED_TYPES.has(trustedMime)) {
+    throw new Error(`${file.name} skipped (unsupported or spoofed format).`);
+  }
+
+  const { width, height } = await readImageDimensions(file);
+  if (!width || !height) {
+    throw new Error(`${file.name} skipped (could not read image dimensions).`);
+  }
+
+  if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+    throw new Error(`${file.name} skipped (dimensions exceed ${MAX_DIMENSION_LABEL}).`);
+  }
+
+  guardMetadata.set(file, { mime: trustedMime, width, height });
+  return { trustedMime, width, height };
+}
+
+function registerObjectUrlCleanup(element, url) {
+  if (!url || !element) {
+    return;
+  }
+
+  let observer;
+
+  const cleanup = () => {
+    if (activeUrls.has(url)) {
+      URL.revokeObjectURL(url);
+      activeUrls.delete(url);
+    }
+    if (observer) {
+      observer.disconnect();
+      observer = undefined;
+    }
+  };
+
+  observer = new MutationObserver(() => {
+    if (!document.body.contains(element)) {
+      cleanup();
+    }
+  });
+
+  observer.observe(document.body, { childList: true, subtree: true });
+
+}
+
+async function readImageDimensions(file) {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve({ width: img.naturalWidth || img.width, height: img.naturalHeight || img.height });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve({ width: 0, height: 0 });
+    };
+    img.src = url;
+  });
+}
+
 function isClipboardFileSupported() {
   return typeof navigator !== 'undefined'
     && navigator.clipboard
@@ -346,10 +547,76 @@ function isClipboardFileSupported() {
     && typeof window.ClipboardItem === 'function';
 }
 
+async function initializeApp() {
+  const support = await checkFeatureSupport();
+  if (!support.ok) {
+    disableApp(support.reason);
+    return;
+  }
+
+  isAppReady = true;
+  if (supportMessage) {
+    supportMessage.textContent = 'Ready to convert. A light rate limit protects your browser.';
+    supportMessage.classList.remove('support-message--error');
+  }
+}
+
+async function checkFeatureSupport() {
+  const canvas = document.createElement('canvas');
+  if (!canvas || typeof canvas.getContext !== 'function') {
+    return { ok: false, reason: 'Canvas is not supported in this browser.' };
+  }
+
+  if (typeof canvas.toBlob !== 'function') {
+    return { ok: false, reason: 'Canvas toBlob is not supported in this browser.' };
+  }
+
+  let supportsWebP = false;
+  try {
+    const dataUrl = canvas.toDataURL('image/webp');
+    supportsWebP = typeof dataUrl === 'string' && dataUrl.startsWith('data:image/webp');
+  } catch (error) {
+    supportsWebP = false;
+  }
+
+  if (!supportsWebP) {
+    return { ok: false, reason: 'WebP generation is not supported in this browser.' };
+  }
+
+  return { ok: true };
+}
+
+function disableApp(reason) {
+  isAppReady = false;
+  fileInput.disabled = true;
+  qualitySlider.disabled = true;
+  clearBtn.disabled = true;
+  regenerateBtn.disabled = true;
+  regenerateBtn.hidden = true;
+  dropzone.classList.add('dropzone--disabled');
+  dropzone.setAttribute('aria-disabled', 'true');
+
+  if (supportMessage) {
+    supportMessage.textContent = reason;
+    supportMessage.classList.add('support-message--error');
+  }
+
+  results.innerHTML = '';
+  const warning = document.createElement('p');
+  warning.className = 'support-message support-message--error';
+  warning.textContent = reason;
+  results.append(warning);
+}
+
 // Ensure keyboard focus works for dropzone label
 dropzone.addEventListener('keydown', (event) => {
   if (event.key === 'Enter' || event.key === ' ') {
     event.preventDefault();
     fileInput.click();
   }
+});
+
+initializeApp().catch((error) => {
+  console.error(error);
+  disableApp('Unexpected error during initialization.');
 });

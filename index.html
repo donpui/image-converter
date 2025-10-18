@@ -13,7 +13,10 @@
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Just Image Converter | JPG &amp; PNG to WebP">
   <meta name="twitter:description" content="Free browser-based WebP converter with drag-and-drop uploads, quality control, and instant downloads.">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';">
+  <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), accelerometer=(), gyroscope=(), fullscreen=(self)">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -45,6 +48,7 @@
             <button id="clear-btn" class="button button--secondary" type="button">Clear</button>
           </div>
         </div>
+        <p id="support-message" class="support-message" role="status" aria-live="polite"></p>
       </section>
 
       <section class="results" id="results" aria-live="polite"></section>
@@ -75,6 +79,13 @@
       </div>
     </section>
 
+    <section class="privacy" aria-labelledby="privacy-title">
+      <div class="privacy__content">
+        <h2 id="privacy-title">Privacy first</h2>
+        <p>No files are ever uploaded or stored on a server. Every conversion happens locally in your browser to help you stay compliant with GDPR, CCPA, and other privacy regulations.</p>
+      </div>
+    </section>
+
     <footer class="footer">
       <p>Built with plain HTML, CSS, and JavaScript. Perfect for GitHub Pages hosting.</p>
     </footer>
@@ -95,6 +106,10 @@
           <div>
             <dt>WebP</dt>
             <dd class="result__converted"></dd>
+          </div>
+          <div>
+            <dt>Integrity</dt>
+            <dd class="result__checksum">Calculating…</dd>
           </div>
         </dl>
         <div class="result__actions">

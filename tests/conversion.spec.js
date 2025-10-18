@@ -14,6 +14,7 @@ test.describe('Just Image Converter', () => {
     await expect(result).toBeVisible();
     await expect(result.locator('.result__name')).toHaveText(/sample/i);
     await expect(result.locator('.result__converted')).toContainText('Quality 90%');
+    await expect(result.locator('.result__checksum')).toContainText('SHA-256:');
 
     const downloadHref = await result.locator('.result__download').getAttribute('href');
     expect(downloadHref).toBeTruthy();
@@ -40,5 +41,6 @@ test.describe('Just Image Converter', () => {
     const results = page.locator('.result');
     await expect(results).toHaveCount(2);
     await expect(results.nth(1).locator('.result__converted')).toContainText('Quality 95%');
+    await expect(results.nth(1).locator('.result__checksum')).toContainText('SHA-256:');
   });
 });

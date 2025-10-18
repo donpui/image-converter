@@ -7,7 +7,10 @@ Convert JPG and PNG images to modern WebP files—fast, private, and right in yo
 - Adjustable WebP quality slider (50–100)
 - Regenerate conversions at new quality levels without re-uploading
 - Download-ready WebP files and one-click clipboard sharing
-- Built-in 20 MB per-file limit and MIME validation to block unsafe uploads
+- Built-in 20 MB per-file upload limit to keep things lightweight
+- Dimension guardrails (up to 8,000×8,000) plus MIME validation to block unsafe uploads
+- Client-side rate limiting, feature detection, and integrity hashes to keep browsers responsive
+- Explicit privacy notice confirming no server-side processing
 
 ## Quick Start
 ```bash
