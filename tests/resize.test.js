@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { calculateResizeDimensions } from '../app.js';
+import { calculateResizeDimensions } from '../utils.js';
 
 describe('calculateResizeDimensions', () => {
   describe('Original size option', () => {

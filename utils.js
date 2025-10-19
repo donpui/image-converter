@@ -125,3 +125,43 @@ function pruneConversionLog() {
   }
 }
 
+/**
+ * Calculates smart resize dimensions while maintaining aspect ratio
+ * @param {number} originalWidth - Original image width
+ * @param {number} originalHeight - Original image height
+ * @param {string} resizeOption - Resize option ('original' or numeric string like '1024')
+ * @returns {{outputWidth: number, outputHeight: number}} - Calculated dimensions
+ */
+export function calculateResizeDimensions(originalWidth, originalHeight, resizeOption) {
+  if (resizeOption === 'original') {
+    return { outputWidth: originalWidth, outputHeight: originalHeight };
+  }
+
+  const maxDimension = Number(resizeOption);
+  if (isNaN(maxDimension) || maxDimension <= 0) {
+    return { outputWidth: originalWidth, outputHeight: originalHeight };
+  }
+
+  // If image is already smaller than target, keep original size (no upscaling)
+  if (originalWidth <= maxDimension && originalHeight <= maxDimension) {
+    return { outputWidth: originalWidth, outputHeight: originalHeight };
+  }
+
+  // Calculate aspect ratio
+  const aspectRatio = originalWidth / originalHeight;
+
+  let outputWidth, outputHeight;
+
+  // Determine which dimension is larger and scale accordingly
+  if (originalWidth > originalHeight) {
+    // Width is the larger dimension
+    outputWidth = maxDimension;
+    outputHeight = Math.round(maxDimension / aspectRatio);
+  } else {
+    // Height is the larger dimension (or equal)
+    outputHeight = maxDimension;
+    outputWidth = Math.round(maxDimension * aspectRatio);
+  }
+
+  return { outputWidth, outputHeight };
+}

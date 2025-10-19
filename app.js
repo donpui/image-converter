@@ -4,7 +4,8 @@ import {
   detectMimeType,
   validateFileSize,
   validateImageDimensions,
-  validateMimeType
+  validateMimeType,
+  calculateResizeDimensions
 } from './utils.js';
 
 const fileInput = document.getElementById('file-input');
@@ -531,39 +532,6 @@ async function enforcePreConversionGuards(file, resizeOption = 'original') {
   return { trustedMime, width: outputWidth, height: outputHeight };
 }
 
-function calculateResizeDimensions(originalWidth, originalHeight, resizeOption) {
-  if (resizeOption === 'original') {
-    return { outputWidth: originalWidth, outputHeight: originalHeight };
-  }
-
-  const maxDimension = Number(resizeOption);
-  if (isNaN(maxDimension) || maxDimension <= 0) {
-    return { outputWidth: originalWidth, outputHeight: originalHeight };
-  }
-
-  // If image is already smaller than target, keep original size
-  if (originalWidth <= maxDimension && originalHeight <= maxDimension) {
-    return { outputWidth: originalWidth, outputHeight: originalHeight };
-  }
-
-  // Calculate aspect ratio
-  const aspectRatio = originalWidth / originalHeight;
-
-  let outputWidth, outputHeight;
-
-  // Determine which dimension is larger and scale accordingly
-  if (originalWidth > originalHeight) {
-    // Width is the larger dimension
-    outputWidth = maxDimension;
-    outputHeight = Math.round(maxDimension / aspectRatio);
-  } else {
-    // Height is the larger dimension (or equal)
-    outputHeight = maxDimension;
-    outputWidth = Math.round(maxDimension * aspectRatio);
-  }
-
-  return { outputWidth, outputHeight };
-}
 
 function registerObjectUrlCleanup(element, url) {
   if (!url || !element) {
@@ -742,6 +710,3 @@ initializeApp().catch((error) => {
   console.error(error);
   disableApp('Unexpected error during initialization.');
 });
-
-// Export for testing
-export { calculateResizeDimensions };
