@@ -12,12 +12,11 @@ test.describe('Image Conversion', () => {
 
   test('should load the page successfully', async ({ page }) => {
     await expect(page).toHaveTitle(/Just Image Converter/);
-    await expect(page.locator('h1')).toContainText('Convert images to WebP, AVIF, PNG, or JPG');
+    await expect(page.locator('h1')).toContainText('Convert images to WebP, PNG, or JPG');
   });
 
   test('should have all format buttons visible', async ({ page }) => {
     await expect(page.locator('#format-webp')).toBeVisible();
-    await expect(page.locator('#format-avif')).toBeVisible();
     await expect(page.locator('#format-png')).toBeVisible();
     await expect(page.locator('#format-jpeg')).toBeVisible();
   });
@@ -28,20 +27,9 @@ test.describe('Image Conversion', () => {
     const isWebPDisabled = await webpButton.isDisabled();
     
     if (isWebPDisabled) {
-      // WebP not supported, check what's selected instead
-      // Could be AVIF (if supported) or PNG as fallback
-      const avifButton = page.locator('#format-avif');
-      const isAVIFDisabled = await avifButton.isDisabled();
-      
-      if (!isAVIFDisabled) {
-        // AVIF is supported and should be default
-        await expect(avifButton).toHaveClass(/format-btn--active/);
-        await expect(page.locator('#format-value')).toContainText('AVIF');
-      } else {
-        // Neither WebP nor AVIF supported, PNG should be default
-        await expect(page.locator('#format-png')).toHaveClass(/format-btn--active/);
-        await expect(page.locator('#format-value')).toContainText('PNG');
-      }
+      // WebP not supported, PNG should be default
+      await expect(page.locator('#format-png')).toHaveClass(/format-btn--active/);
+      await expect(page.locator('#format-value')).toContainText('PNG');
     } else {
       // WebP supported, should be default
       await expect(webpButton).toHaveClass(/format-btn--active/);
@@ -62,17 +50,6 @@ test.describe('Image Conversion', () => {
     await expect(page.locator('#format-jpeg')).toHaveClass(/format-btn--active/);
     await expect(page.locator('#format-value')).toContainText('JPG');
     await expect(page.locator('#format-info')).toContainText('Wide compatibility');
-
-    // Click AVIF button if supported
-    const avifButton = page.locator('#format-avif');
-    const isAVIFDisabled = await avifButton.isDisabled();
-    
-    if (!isAVIFDisabled) {
-      await avifButton.click();
-      await expect(avifButton).toHaveClass(/format-btn--active/);
-      await expect(page.locator('#format-value')).toContainText('AVIF');
-      await expect(page.locator('#format-info')).toContainText('Best quality');
-    }
 
     // Click WebP button if supported
     const webpButton = page.locator('#format-webp');
@@ -104,29 +81,17 @@ test.describe('Image Conversion', () => {
   test('should convert PNG to WebP or fallback format', async ({ page }) => {
     const testImagePath = join(process.cwd(), 'tests/fixtures/sample.png');
     
-    // Determine which format is currently selected (based on browser support)
+    // Check if WebP is supported, otherwise use PNG
     const webpButton = page.locator('#format-webp');
-    const avifButton = page.locator('#format-avif');
     const isWebPDisabled = await webpButton.isDisabled();
-    const isAVIFDisabled = await avifButton.isDisabled();
-    
-    let expectedFormat, expectedMime;
+    const expectedFormat = isWebPDisabled ? 'png' : 'webp';
+    const expectedMime = isWebPDisabled ? 'image/png' : 'image/webp';
     
     if (!isWebPDisabled) {
-      // WebP is supported and should be default
-      expectedFormat = 'webp';
-      expectedMime = 'image/webp';
-    } else if (!isAVIFDisabled) {
-      // WebP not supported but AVIF is (e.g., Safari 16+)
-      expectedFormat = 'avif';
-      expectedMime = 'image/avif';
-    } else {
-      // Neither WebP nor AVIF supported, fallback to PNG
-      expectedFormat = 'png';
-      expectedMime = 'image/png';
+      await webpButton.click();
     }
     
-    // Upload file (using whatever format is currently selected)
+    // Upload file
     const fileChooserPromise = page.waitForEvent('filechooser');
     await page.locator('#file-input').evaluate((input) => input.click());
     const fileChooser = await fileChooserPromise;
@@ -192,44 +157,6 @@ test.describe('Image Conversion', () => {
     const downloadBtn = page.locator('.result__download').first();
     const downloadAttr = await downloadBtn.getAttribute('download');
     expect(downloadAttr).toContain('.jpg');
-  });
-
-  test('should convert PNG to AVIF if supported', async ({ page }) => {
-    const testImagePath = join(process.cwd(), 'tests/fixtures/sample.png');
-    
-    // Check if AVIF is supported
-    const avifButton = page.locator('#format-avif');
-    const isAVIFDisabled = await avifButton.isDisabled();
-    
-    if (isAVIFDisabled) {
-      // Skip this test if AVIF is not supported
-      test.skip();
-      return;
-    }
-    
-    // Select AVIF format
-    await avifButton.click();
-    await expect(page.locator('#quality')).toBeEnabled();
-    
-    // Upload file
-    const fileChooserPromise = page.waitForEvent('filechooser');
-    await page.locator('#file-input').evaluate((input) => input.click());
-    const fileChooser = await fileChooserPromise;
-    await fileChooser.setFiles(testImagePath);
-
-    // Wait for conversion to complete
-    await expect(page.locator('.result-card')).toBeVisible({ timeout: 10000 });
-    
-    // Check that result is AVIF
-    await expect(page.locator('.result__converted')).toContainText('image/avif');
-    
-    // Check download button has AVIF extension
-    const downloadBtn = page.locator('.result__download').first();
-    const downloadAttr = await downloadBtn.getAttribute('download');
-    expect(downloadAttr).toContain('.avif');
-    
-    // Check that quality is mentioned (AVIF is lossy)
-    await expect(page.locator('.result__converted')).toContainText('Quality');
   });
 
   test('should respect quality settings for lossy formats', async ({ page }) => {

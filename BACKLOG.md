@@ -2,7 +2,7 @@
 
 - [x] Support Dark mode
 - [x] Add scaling support
-- [ ] Add Avif convert support
+- [ ] Add Avif support (current Canvas API only decode)
 - [ ] Generate shareable url (that would work with curl) 
 - [ ] Add counter of conversions
 - [ ] Add mobile browser support for WebP

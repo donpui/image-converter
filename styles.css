@@ -384,8 +384,8 @@ body {
   background: var(--color-secondary);
   border-radius: var(--radius-full);
   font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-text-light);
+  font-weight: 600;
+  color: var(--color-text);
 }
 
 .badge:last-child {
@@ -525,6 +525,11 @@ body {
   border-color: var(--color-primary);
   background: var(--color-primary);
   color: white;
+}
+
+.format-btn--active:hover {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
 }
 
 .format-btn:disabled {
