@@ -36,6 +36,29 @@ bun install  # only needed once
 bun test     # runs unit tests
 ```
 
+
+```bash
+# Run all tests (all browsers)
+bun run test:e2e
+
+# Interactive UI mode (recommended for development)
+bun run test:e2e:ui
+
+# Run with browser visible (headed mode)
+bun run test:e2e:headed
+
+# Run specific browser
+bun run test:e2e:chromium
+bun run test:e2e:firefox
+bun run test:e2e:webkit
+
+# Debug mode (step through tests)
+bun run test:e2e:debug
+
+# Run all tests (unit + E2E)
+bun run test:all
+```
+
 ## Deploy to GitHub Pages
 
 ### Deploy Updates

@@ -143,7 +143,6 @@ body {
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  text-fill-color: transparent;
 }
 
 [data-theme="dark"] .navbar__title {
@@ -244,7 +243,6 @@ body {
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  text-fill-color: transparent;
 }
 
 .hero__subtitle {
@@ -322,6 +320,21 @@ body {
 .dropzone:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
+}
+
+.dropzone__content-inner {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+}
+
+.dropzone__content-inner-text {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  justify-content: start;
 }
 
 .dropzone--active {

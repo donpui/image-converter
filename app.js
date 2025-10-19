@@ -232,7 +232,6 @@ regenerateBtn.addEventListener('click', async () => {
         convertedBlob,
         convertedSize: convertedBlob.size,
         dimensions: `${width} × ${height}`,
-        mime: convertedBlob.type,
         originalInfo,
         quality: qualityPercent,
         resize: resizeOption,
@@ -307,7 +306,6 @@ async function convertFiles(fileList) {
         convertedBlob,
         convertedSize: convertedBlob.size,
         dimensions: `${width} × ${height}`,
-        mime: convertedBlob.type,
         originalInfo,
         quality: qualityPercent,
         resize: resizeOption,
@@ -348,11 +346,11 @@ async function convertFile(file, quality, format) {
 
   context.drawImage(img, 0, 0, outputWidth, outputHeight);
   
-  const formatInfo = FORMAT_INFO[format] || FORMAT_INFO.webp;
+  const converFormatInfo = FORMAT_INFO[format] || FORMAT_INFO.webp;
   const mimeType = formatInfo.mime;
   
   // For PNG, quality parameter is ignored
-  const convertedBlob = await canvasToBlob(canvas, mimeType, formatInfo.supportsQuality ? quality : undefined);
+  const convertedBlob = await canvasToBlob(canvas, mimeType, converFormatInfo.supportsQuality ? quality : undefined);
 
   if (!convertedBlob) {
     throw new Error(`Browser failed to create ${formatInfo.label} blob.`);
@@ -387,7 +385,16 @@ function canvasToBlob(canvas, type, quality) {
 }
 
 function renderResult({
-  displayName, downloadName, convertedUrl, convertedBlob, convertedSize, dimensions, mime, originalInfo, quality, resize, format
+  displayName,
+  downloadName,
+  convertedUrl,
+  convertedBlob,
+  convertedSize,
+  dimensions,
+  originalInfo,
+  quality,
+  resize,
+  format
 }) {
   const clone = document.importNode(template.content, true);
   const article = clone.querySelector('.result-card');
@@ -399,19 +406,19 @@ function renderResult({
   const copyBtn = clone.querySelector('.result__copy');
   const checksum = clone.querySelector('.result__checksum');
 
-  const formatInfo = FORMAT_INFO[format] || FORMAT_INFO.webp;
+  const resultsFormatInfo = FORMAT_INFO[format] || FORMAT_INFO.webp;
   let copyResetId;
-  const qualityLabel = Number.isFinite(quality) && formatInfo.supportsQuality ? `Quality ${quality}%` : '';
+  const qualityLabel = Number.isFinite(quality) && resultsFormatInfo.supportsQuality ? `Quality ${quality}%` : '';
   const resizeLabel = resize && resize !== 'original' ? `${resize}px` : '';
   let downloadSuffix = '';
-  if (Number.isFinite(quality) && formatInfo.supportsQuality) {
+  if (Number.isFinite(quality) && resultsFormatInfo.supportsQuality) {
     downloadSuffix += `-q${quality}`;
   }
   if (resizeLabel) {
     downloadSuffix += `-${resizeLabel}`;
   }
 
-  const defaultCopyText = copyBtn.textContent.trim() || `Copy ${formatInfo.label}`;
+  const defaultCopyText = copyBtn.textContent.trim() || `Copy ${resultsFormatInfo.label}`;
 
   const setCopyLabel = (text, shouldReset = true) => {
     copyBtn.textContent = text;
@@ -434,13 +441,15 @@ function renderResult({
   }
 
   name.textContent = displayTitle;
-  image.alt = `${displayName} preview in ${formatInfo.label} format`;
+  image.alt = `${displayName} preview in ${resultsFormatInfo.label} format`;
   image.src = convertedUrl;
   downloadBtn.href = convertedUrl;
-  downloadBtn.download = `${downloadName}${downloadSuffix}.${formatInfo.ext}`;
+  downloadBtn.download = `${downloadName}${downloadSuffix}.${resultsFormatInfo.ext}`;
   original.textContent = originalInfo;
   
-  const convertedParts = [formatBytes(convertedSize), mime, dimensions];
+  // Use format info MIME type instead of blob.type for reliability
+  const displayMimeType = resultsFormatInfo.mime;
+  const convertedParts = [formatBytes(convertedSize), displayMimeType, dimensions];
   if (qualityLabel) {convertedParts.push(qualityLabel);}
   if (resizeLabel) {convertedParts.push(resizeLabel);}
   if (displayParts.length > 0) {

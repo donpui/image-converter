@@ -8,6 +8,14 @@
     "start": "bunx serve -p 3000",
     "dev": "bunx serve -p 3000",
     "test": "bun test",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:chromium": "playwright test --project=chromium",
+    "test:e2e:firefox": "playwright test --project=firefox",
+    "test:e2e:webkit": "playwright test --project=webkit",
+    "test:e2e:debug": "playwright test --debug",
+    "test:all": "bun test && playwright test",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
@@ -24,7 +32,9 @@
   "homepage": "https://github.com/donpui/image-converter#readme",
   "devDependencies": {
     "@eslint/js": "^9.38.0",
+    "@playwright/test": "^1.56.1",
     "eslint": "^9.38.0",
-    "globals": "^16.4.0"
+    "globals": "^16.4.0",
+    "playwright": "^1.56.1"
   }
 }

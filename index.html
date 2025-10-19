@@ -86,6 +86,7 @@
         <section class="upload-section">
           <label class="dropzone" for="file-input" id="dropzone" tabindex="0">
             <div class="dropzone__content">
+              <div class="dropzone__content-inner">
               <div class="dropzone__icon" aria-hidden="true">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -93,8 +94,11 @@
                   <line x1="12" y1="3" x2="12" y2="15"></line>
                 </svg>
               </div>
-              <h3 class="dropzone__title">Drop your images here</h3>
-              <p class="dropzone__subtitle">or click to browse, or paste from clipboard</p>
+              <div class="dropzone__content-inner-text">
+                <h3 class="dropzone__title">Drop your images here</h3>
+                <p class="dropzone__subtitle">or click to browse, or paste</p>
+              </div>
+            </div>
               <div class="dropzone__info">
                 <span class="badge">JPG</span>
                 <span class="badge">PNG</span>

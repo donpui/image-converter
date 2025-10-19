@@ -1,3 +1,5 @@
 [test]
 # Enable coverage reporting
 coverage = true
+# Exclude E2E tests (run with Playwright instead)
+exclude = ["tests/e2e/**"]
