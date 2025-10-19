@@ -64,6 +64,13 @@ const FORMAT_INFO = {
     info: 'Best compression • Smallest file size',
     supportsQuality: true
   },
+  avif: {
+    mime: 'image/avif',
+    ext: 'avif',
+    label: 'AVIF',
+    info: 'Best quality • Advanced compression',
+    supportsQuality: true
+  },
   png: {
     mime: 'image/png',
     ext: 'png',
@@ -706,6 +713,17 @@ async function checkFeatureSupport() {
     // WebP not supported
   }
   
+  // Check AVIF support (modern browsers only)
+  try {
+    const dataUrl = canvas.toDataURL('image/avif');
+    if (typeof dataUrl === 'string' && dataUrl.startsWith('data:image/avif')) {
+      supportedFormats.push('avif');
+    }
+  } catch (error) {
+    console.error(error);
+    // AVIF not supported
+  }
+  
   // Check PNG support (almost always supported)
   try {
     const dataUrl = canvas.toDataURL('image/png');
@@ -739,7 +757,7 @@ async function checkFeatureSupport() {
     }
   });
   
-  // If WebP is not supported but selected, switch to first supported format
+  // If selected format is not supported, switch to first supported format
   if (!supportedFormats.includes(selectedFormat)) {
     selectFormat(supportedFormats[0]);
   }

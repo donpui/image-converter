@@ -3,13 +3,15 @@
 [![Tests](https://github.com/donpui/image-converter/actions/workflows/tests.yml/badge.svg)](https://github.com/donpui/image-converter/actions/workflows/tests.yml)
 [![Playwright Tests](https://github.com/donpui/image-converter/actions/workflows/playwright.yml/badge.svg)](https://github.com/donpui/image-converter/actions/workflows/playwright.yml)
 
-Convert JPG, PNG, or modern WebP files—fast, private, and right in your browser. The app runs entirely on the client, so nothing ever leaves your device. 
+Convert JPG, PNG to WebP, AVIF, PNG, or JPG—fast, private, and right in your browser. The app runs entirely on the client, so nothing ever leaves your device. 
 
 ## Features
+- **Multiple Output Formats**: Choose between WebP, AVIF, PNG, or JPG
+- **Smart Format Detection**: Automatically detects browser support and disables unsupported formats
 - Drag-and-drop uploads with fallback file picker
-- Adjustable WebP quality slider (50–100)
+- Adjustable quality slider (50–100) for lossy formats (WebP, AVIF, JPG)
 - Regenerate conversions at new quality levels without re-uploading
-- Download-ready WebP files and one-click clipboard sharing
+- Download-ready files and one-click clipboard sharing
 - Built-in 50 MB per-file upload limit to keep things lightweight
 - Dimension guardrails (up to 20,000×20,000) plus MIME validation to block unsafe uploads
 - Client-side rate limiting, feature detection, and integrity hashes to keep browsers responsive
@@ -81,4 +83,6 @@ git merge main
 git push origin gh-pages
 ```
 
-Wait 1-2 minutes for the build to complete. Check deployment status under **Actions** tab.
+### Notes
+
+Canvas API: https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Verify App Detection Logic</title>
+  <style>
+    body { font-family: system-ui; padding: 20px; max-width: 800px; margin: 0 auto; }
+    .format { padding: 15px; margin: 10px 0; border-radius: 8px; }
+    .supported { background: #d4edda; border: 2px solid #28a745; }
+    .not-supported { background: #f8d7da; border: 2px solid #dc3545; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Format Detection Test</h1>
+  <p>This uses the <strong>exact same detection logic</strong> as your app:</p>
+  <div id="results"></div>
+  
+  <script>
+    function checkFeatureSupport() {
+      const canvas = document.createElement('canvas');
+      const results = document.getElementById('results');
+      const supportedFormats = [];
+      
+      // Exact same logic as app.js
+      const formats = [
+        { name: 'WebP', mime: 'image/webp', id: 'webp' },
+        { name: 'AVIF', mime: 'image/avif', id: 'avif' },
+        { name: 'PNG', mime: 'image/png', id: 'png' },
+        { name: 'JPEG', mime: 'image/jpeg', id: 'jpeg' }
+      ];
+      
+      formats.forEach(format => {
+        try {
+          const dataUrl = canvas.toDataURL(format.mime);
+          const isSupported = typeof dataUrl === 'string' && dataUrl.startsWith(`data:${format.mime}`);
+          
+          if (isSupported) {
+            supportedFormats.push(format.id);
+          }
+          
+          const statusClass = isSupported ? 'supported' : 'not-supported';
+          const statusText = isSupported ? '✅ SUPPORTED' : '❌ NOT SUPPORTED';
+          const buttonState = isSupported ? 'ENABLED' : 'DISABLED';
+          
+          results.innerHTML += `
+            <div class="format ${statusClass}">
+              <h3>${format.name} ${statusText}</h3>
+              <p><strong>MIME Type:</strong> <code>${format.mime}</code></p>
+              <p><strong>Detection Result:</strong> <code>${dataUrl.substring(0, 30)}...</code></p>
+            </div>
+          `;
+        } catch (e) {
+          results.innerHTML += `
+            <div class="format not-supported">
+              <h3>${format.name} ❌ ERROR</h3>
+              <p>${e.message}</p>
+            </div>
+          `;
+        }
+      });
+      
+      results.innerHTML += `
+        <hr>
+        <h3>Summary</h3>
+        <p><strong>Supported Formats:</strong> ${supportedFormats.join(', ').toUpperCase()}</p>
+        <p><strong>Default Format:</strong> ${supportedFormats[0] ? supportedFormats[0].toUpperCase() : 'NONE'}</p>
+        <p><strong>Browser:</strong> ${navigator.userAgent}</p>
+      `;
+    }
+    
+    checkFeatureSupport();
+  </script>
+</body>
+</html>

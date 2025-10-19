@@ -2,7 +2,7 @@
   "name": "just-image-converter",
   "version": "1.0.0",
   "type": "module",
-  "description": "Convert JPG and PNG images to WebP, PNG, or JPG—fast, private, and right in your browser. Choose your format. The app runs entirely on the client, so nothing ever leaves your device.",
+  "description": "Convert JPG and PNG images to WebP, AVIF, PNG, or JPG—fast, private, and right in your browser. Choose your format. The app runs entirely on the client, so nothing ever leaves your device.",
   "main": "app.js",
   "scripts": {
     "start": "bunx serve -p 3000",

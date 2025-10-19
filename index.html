@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Just Image Converter | JPG &amp; PNG to WebP, PNG, JPG</title>
-  <meta name="description" content="Convert JPG and PNG images to WebP, PNG, or JPG directly in your browser. Control quality, choose format, regenerate versions instantly, and keep every file on your device.">
+  <title>Just Image Converter | JPG &amp; PNG to WebP, AVIF, PNG, JPG</title>
+  <meta name="description" content="Convert JPG and PNG images to WebP, AVIF, PNG, or JPG directly in your browser. Control quality, choose format, regenerate versions instantly, and keep every file on your device.">
   <meta name="robots" content="index,follow">
-  <meta property="og:title" content="Just Image Converter | JPG &amp; PNG to WebP, PNG, JPG">
-  <meta property="og:description" content="Drag, drop, and convert images to WebP, PNG, or JPG locally with adjustable quality and one-click downloads.">
+  <meta property="og:title" content="Just Image Converter | JPG &amp; PNG to WebP, AVIF, PNG, JPG">
+  <meta property="og:description" content="Drag, drop, and convert images to WebP, AVIF, PNG, or JPG locally with adjustable quality and one-click downloads.">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="en_US">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Just Image Converter | JPG &amp; PNG to WebP, PNG, JPG">
-  <meta name="twitter:description" content="Free browser-based image converter with drag-and-drop uploads, multiple format support, quality control, and instant downloads.">
+  <meta name="twitter:title" content="Just Image Converter | JPG &amp; PNG to WebP, AVIF, PNG, JPG">
+  <meta name="twitter:description" content="Free browser-based image converter with drag-and-drop uploads, multiple format support (WebP, AVIF, PNG, JPG), quality control, and instant downloads.">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
@@ -76,7 +76,7 @@
 
     <header class="hero">
       <div class="hero__content">
-        <h1 class="hero__title">Convert images to WebP, PNG, or JPG</h1>
+        <h1 class="hero__title">Convert images to WebP, AVIF, PNG, or JPG</h1>
         <p class="hero__subtitle">Fast, private, and 100% client-side. No cloud storaging. No server-side processing.</p>
       </div>
     </header>
@@ -117,6 +117,7 @@
               </div>
               <div class="format-selector">
                 <button type="button" class="format-btn format-btn--active" data-format="webp" id="format-webp">WebP</button>
+                <button type="button" class="format-btn" data-format="avif" id="format-avif">AVIF</button>
                 <button type="button" class="format-btn" data-format="png" id="format-png">PNG</button>
                 <button type="button" class="format-btn" data-format="jpeg" id="format-jpeg">JPG</button>
               </div>
@@ -230,7 +231,7 @@
     },
     "featureList": [
       "Drag-and-drop uploads for JPG and PNG files",
-      "Choose output format: WebP, PNG, or JPG",
+      "Choose output format: WebP, AVIF, PNG, or JPG",
       "Adjustable quality slider for lossy formats",
       "Regenerate files without re-uploading",
       "Instant downloads and clipboard sharing"

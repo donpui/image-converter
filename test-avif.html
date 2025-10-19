@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AVIF Detection Test</title>
+  <style>
+    body { font-family: system-ui; padding: 20px; max-width: 800px; margin: 0 auto; }
+    .format { padding: 15px; margin: 10px 0; border-radius: 8px; }
+    .supported { background: #d4edda; border: 2px solid #28a745; }
+    .not-supported { background: #f8d7da; border: 2px solid #dc3545; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <h1>AVIF Support Test</h1>
+  <div id="results"></div>
+  
+  <script>
+    async function testAVIF() {
+      const results = document.getElementById('results');
+      results.innerHTML = '<p>Testing AVIF support...</p>';
+      
+      // Method 1: toDataURL test (what we use in the app)
+      const canvas = document.createElement('canvas');
+      canvas.width = 1;
+      canvas.height = 1;
+      
+      try {
+        const dataUrl = canvas.toDataURL('image/avif');
+        const method1 = dataUrl && dataUrl.startsWith('data:image/avif');
+        results.innerHTML += `<p><strong>Method 1 (toDataURL):</strong> ${method1 ? '✅ Supported' : '❌ Not supported'}</p>`;
+        results.innerHTML += `<p>Data URL prefix: ${dataUrl.substring(0, 30)}...</p>`;
+      } catch (e) {
+        console.error(e);
+        results.innerHTML += `<p><strong>Method 1 (toDataURL):</strong> ❌ Error: ${e.message}</p>`;
+      }
+      
+      // Method 2: toBlob test
+      try {
+        const blob = await new Promise((resolve) => {
+          canvas.toBlob(resolve, 'image/avif', 0.9);
+        });
+        const method2 = blob && blob.type === 'image/avif';
+        results.innerHTML += `<p><strong>Method 2 (toBlob):</strong> ${method2 ? '✅ Supported' : '❌ Not supported'}</p>`;
+        results.innerHTML += `<p>Blob type: ${blob ? blob.type : 'null'}</p>`;
+      } catch (e) {
+        results.innerHTML += `<p><strong>Method 2 (toBlob):</strong> ❌ Error: ${e.message}</p>`;
+      }
+      
+      // Method 3: HTMLImageElement decode test
+      try {
+        const img = new Image();
+        const avifTestString = 'data:image/avif;base64,AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAADybWV0YQAAAAAAAAAoaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAGxpYmF2aWYAAAAADnBpdG0AAAAAAAEAAAAeaWxvYwAAAABEAAABAAEAAAABAAABGgAAAB0AAAAoaWluZgAAAAAAAQAAABppbmZlAgAAAAABAABhdjAxQ29sb3IAAAAAamlwcnAAAABLaXBjbwAAABRpc3BlAAAAAAAAAAIAAAACAAAAEHBpeGkAAAAAAwgICAAAAAxhdjFDgQ0MAAAAABNjb2xybmNseAACAAIAAYAAAAAXaXBtYQAAAAAAAAABAAEEAQKDBAAAACVtZGF0EgAKCBgANogQEAwgMg8f8D///8WfhwB8+ErK42A=';
+        img.src = avifTestString;
+        
+        await img.decode();
+        results.innerHTML += `<p><strong>Method 3 (Image decode):</strong> ✅ Supported</p>`;
+      } catch (e) {
+        results.innerHTML += `<p><strong>Method 3 (Image decode):</strong> ❌ Not supported</p>`;
+      }
+      
+      results.innerHTML += `<hr><p><strong>Browser:</strong> ${navigator.userAgent}</p>`;
+    }
+    
+    testAVIF();
+  </script>
+</body>
+</html>
