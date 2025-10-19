@@ -118,6 +118,21 @@
                 <span>100%</span>
               </div>
             </div>
+            <div class="control-group">
+              <div class="control-label">
+                <label for="resize">Resize</label>
+                <span id="resize-value" class="control-value">Original</span>
+              </div>
+              <input type="range" id="resize" class="slider" min="0" max="12" value="0" step="1">
+              <div class="slider-marks resize-marks">
+                <span>Off</span>
+                <span>1024px</span>
+                <span>4K</span>
+              </div>
+              <div class="resize-info" id="resize-info">
+                Drag to resize • Aspect ratio preserved
+              </div>
+            </div>
             <div class="controls-actions">
               <button id="regenerate-btn" class="btn btn--primary" type="button" hidden disabled>
                 <span>🔄</span>

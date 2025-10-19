@@ -13,6 +13,9 @@ const results = document.getElementById('results');
 const template = document.getElementById('result-template');
 const qualitySlider = document.getElementById('quality');
 const qualityValue = document.getElementById('quality-value');
+const resizeSlider = document.getElementById('resize');
+const resizeValue = document.getElementById('resize-value');
+const resizeInfo = document.getElementById('resize-info');
 const clearBtn = document.getElementById('clear-btn');
 const regenerateBtn = document.getElementById('regenerate-btn');
 const supportMessage = document.getElementById('support-message');
@@ -22,6 +25,23 @@ const MAX_CONVERSIONS_PER_WINDOW = 15;
 const RATE_LIMIT_WINDOW_MS = 30 * 1000;
 const RATE_LIMIT_MESSAGE = 'Rate limit reached. Please wait a moment before converting more images.';
 
+// Resize options mapping: slider value -> {pixels, label}
+const RESIZE_OPTIONS = [
+  { value: 'original', label: 'Original', description: 'No resize' },
+  { value: '16', label: '16px', description: 'Icon' },
+  { value: '64', label: '64px', description: 'Icon' },
+  { value: '128', label: '128px', description: 'Icon' },
+  { value: '320', label: '320px', description: 'Thumbnail' },
+  { value: '512', label: '512px', description: 'Small' },
+  { value: '640', label: '640px', description: 'Small' },
+  { value: '800', label: '800px', description: 'Medium' },
+  { value: '1024', label: '1024px', description: 'Large' },
+  { value: '1280', label: '1280px', description: 'HD Ready' },
+  { value: '1920', label: '1920px', description: 'Full HD' },
+  { value: '2560', label: '2560px', description: '2K' },
+  { value: '4096', label: '4096px', description: '4K' }
+];
+
 const activeUrls = new Set();
 const storedFiles = [];
 const conversionLog = [];
@@ -30,7 +50,26 @@ const regenerateDefaultLabel = regenerateBtn ? regenerateBtn.textContent : 'Rege
 
 let isAppReady = false;
 
+function updateResizeDisplay() {
+  const index = Number(resizeSlider.value);
+  const option = RESIZE_OPTIONS[index];
+  
+  resizeValue.textContent = option.label;
+  
+  if (option.value === 'original') {
+    resizeInfo.textContent = 'Original size • No resize applied';
+  } else {
+    resizeInfo.textContent = `Max dimension: ${option.value}px • ${option.description} • Aspect ratio preserved`;
+  }
+}
+
+function getResizeOption() {
+  const index = Number(resizeSlider.value);
+  return RESIZE_OPTIONS[index].value;
+}
+
 qualityValue.textContent = `${qualitySlider.value}%`;
+updateResizeDisplay();
 regenerateBtn.hidden = true;
 regenerateBtn.disabled = true;
 
@@ -66,6 +105,10 @@ qualitySlider.addEventListener('input', () => {
   qualityValue.textContent = `${qualitySlider.value}%`;
 });
 
+resizeSlider.addEventListener('input', () => {
+  updateResizeDisplay();
+});
+
 clearBtn.addEventListener('click', () => {
   results.innerHTML = '';
   storedFiles.length = 0;
@@ -85,6 +128,7 @@ regenerateBtn.addEventListener('click', async () => {
 
   const qualityPercent = Number(qualitySlider.value);
   const quality = qualityPercent / 100;
+  const resizeOption = getResizeOption();
   const previousLabel = regenerateBtn.textContent;
   regenerateBtn.disabled = true;
   regenerateBtn.textContent = 'Regenerating...';
@@ -102,7 +146,7 @@ regenerateBtn.addEventListener('click', async () => {
     }
 
     try {
-      await enforcePreConversionGuards(file);
+      await enforcePreConversionGuards(file, resizeOption);
       if (!reserveConversionSlot()) {
         if (!rateLimitNotified) {
           announce(RATE_LIMIT_MESSAGE);
@@ -123,6 +167,7 @@ regenerateBtn.addEventListener('click', async () => {
         mime: webpBlob.type,
         originalInfo,
         quality: qualityPercent,
+        resize: resizeOption,
       });
       successCount += 1;
     } catch (error) {
@@ -161,6 +206,7 @@ async function convertFiles(fileList) {
   const files = Array.from(fileList);
   const qualityPercent = Number(qualitySlider.value);
   const quality = qualityPercent / 100;
+  const resizeOption = getResizeOption();
 
   let rateLimitNotified = false;
 
@@ -174,7 +220,7 @@ async function convertFiles(fileList) {
     }
 
     try {
-      await enforcePreConversionGuards(file);
+      await enforcePreConversionGuards(file, resizeOption);
       if (!reserveConversionSlot()) {
         if (!rateLimitNotified) {
           announce(RATE_LIMIT_MESSAGE);
@@ -195,6 +241,7 @@ async function convertFiles(fileList) {
         mime: webpBlob.type,
         originalInfo,
         quality: qualityPercent,
+        resize: resizeOption,
       });
       addStoredFile(file);
     } catch (error) {
@@ -265,7 +312,7 @@ function canvasToBlob(canvas, type, quality) {
 }
 
 function renderResult({
-  displayName, downloadName, webpUrl, webpBlob, webpSize, dimensions, mime, originalInfo, quality
+  displayName, downloadName, webpUrl, webpBlob, webpSize, dimensions, mime, originalInfo, quality, resize
 }) {
   const clone = document.importNode(template.content, true);
   const article = clone.querySelector('.result-card');
@@ -279,7 +326,14 @@ function renderResult({
 
   let copyResetId;
   const qualityLabel = Number.isFinite(quality) ? `Quality ${quality}%` : '';
-  const downloadSuffix = Number.isFinite(quality) ? `-q${quality}` : '';
+  const resizeLabel = resize && resize !== 'original' ? `${resize}px` : '';
+  let downloadSuffix = '';
+  if (Number.isFinite(quality)) {
+    downloadSuffix += `-q${quality}`;
+  }
+  if (resizeLabel) {
+    downloadSuffix += `-${resizeLabel}`;
+  }
 
   const defaultCopyText = copyBtn.textContent.trim() || 'Copy WebP';
 
@@ -295,13 +349,29 @@ function renderResult({
     }
   };
 
-  name.textContent = qualityLabel ? `${displayName} (${qualityLabel})` : displayName;
+  let displayTitle = displayName;
+  const displayParts = [];
+  if (qualityLabel) {displayParts.push(qualityLabel);}
+  if (resizeLabel) {displayParts.push(resizeLabel);}
+  if (displayParts.length > 0) {
+    displayTitle = `${displayName} (${displayParts.join(', ')})`;
+  }
+
+  name.textContent = displayTitle;
   image.alt = `${displayName} preview in WebP format`;
   image.src = webpUrl;
   downloadBtn.href = webpUrl;
   downloadBtn.download = `${downloadName}${downloadSuffix}.webp`;
   original.textContent = originalInfo;
-  converted.textContent = `${formatBytes(webpSize)} • ${mime} • ${dimensions}${qualityLabel ? ` • ${qualityLabel}` : ''}`;
+  
+  const convertedParts = [formatBytes(webpSize), mime, dimensions];
+  if (qualityLabel) {convertedParts.push(qualityLabel);}
+  if (resizeLabel) {convertedParts.push(resizeLabel);}
+  if (displayParts.length > 0) {
+    displayTitle = `${displayName} (${displayParts.join(', ')})`;
+  }
+  converted.textContent = convertedParts.join(' • ');
+  
   checksum.textContent = 'Calculating…';
   activeUrls.add(webpUrl);
 
@@ -427,7 +497,7 @@ function checksumWorker() {
   };
 }
 
-async function enforcePreConversionGuards(file) {
+async function enforcePreConversionGuards(file, resizeOption = 'original') {
   // Validate file size
   const sizeValidation = validateFileSize(file.size);
   if (!sizeValidation.valid) {
@@ -454,8 +524,45 @@ async function enforcePreConversionGuards(file) {
     throw new Error(`${file.name} skipped (${dimensionValidation.reason}).`);
   }
 
-  guardMetadata.set(file, { mime: trustedMime, width, height });
-  return { trustedMime, width, height };
+  // Calculate smart resize dimensions
+  const { outputWidth, outputHeight } = calculateResizeDimensions(width, height, resizeOption);
+
+  guardMetadata.set(file, { mime: trustedMime, width: outputWidth, height: outputHeight });
+  return { trustedMime, width: outputWidth, height: outputHeight };
+}
+
+function calculateResizeDimensions(originalWidth, originalHeight, resizeOption) {
+  if (resizeOption === 'original') {
+    return { outputWidth: originalWidth, outputHeight: originalHeight };
+  }
+
+  const maxDimension = Number(resizeOption);
+  if (isNaN(maxDimension) || maxDimension <= 0) {
+    return { outputWidth: originalWidth, outputHeight: originalHeight };
+  }
+
+  // If image is already smaller than target, keep original size
+  if (originalWidth <= maxDimension && originalHeight <= maxDimension) {
+    return { outputWidth: originalWidth, outputHeight: originalHeight };
+  }
+
+  // Calculate aspect ratio
+  const aspectRatio = originalWidth / originalHeight;
+
+  let outputWidth, outputHeight;
+
+  // Determine which dimension is larger and scale accordingly
+  if (originalWidth > originalHeight) {
+    // Width is the larger dimension
+    outputWidth = maxDimension;
+    outputHeight = Math.round(maxDimension / aspectRatio);
+  } else {
+    // Height is the larger dimension (or equal)
+    outputHeight = maxDimension;
+    outputWidth = Math.round(maxDimension * aspectRatio);
+  }
+
+  return { outputWidth, outputHeight };
 }
 
 function registerObjectUrlCleanup(element, url) {
@@ -635,3 +742,6 @@ initializeApp().catch((error) => {
   console.error(error);
   disableApp('Unexpected error during initialization.');
 });
+
+// Export for testing
+export { calculateResizeDimensions };
