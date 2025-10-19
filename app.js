@@ -21,6 +21,9 @@ const clearBtn = document.getElementById('clear-btn');
 const regenerateBtn = document.getElementById('regenerate-btn');
 const supportMessage = document.getElementById('support-message');
 const themeToggle = document.getElementById('theme-toggle');
+const formatButtons = document.querySelectorAll('.format-btn');
+const formatValue = document.getElementById('format-value');
+const formatInfo = document.getElementById('format-info');
 
 const MAX_CONVERSIONS_PER_WINDOW = 15;
 const RATE_LIMIT_WINDOW_MS = 30 * 1000;
@@ -50,6 +53,32 @@ const guardMetadata = new WeakMap();
 const regenerateDefaultLabel = regenerateBtn ? regenerateBtn.textContent : 'Regenerate';
 
 let isAppReady = false;
+let selectedFormat = 'webp';
+
+// Format metadata
+const FORMAT_INFO = {
+  webp: {
+    mime: 'image/webp',
+    ext: 'webp',
+    label: 'WebP',
+    info: 'Best compression • Smallest file size',
+    supportsQuality: true
+  },
+  png: {
+    mime: 'image/png',
+    ext: 'png',
+    label: 'PNG',
+    info: 'Lossless • Transparency support',
+    supportsQuality: false
+  },
+  jpeg: {
+    mime: 'image/jpeg',
+    ext: 'jpg',
+    label: 'JPG',
+    info: 'Wide compatibility • Good compression',
+    supportsQuality: true
+  }
+};
 
 function updateResizeDisplay() {
   const index = Number(resizeSlider.value);
@@ -110,6 +139,44 @@ resizeSlider.addEventListener('input', () => {
   updateResizeDisplay();
 });
 
+formatButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const format = btn.dataset.format;
+    if (format && FORMAT_INFO[format]) {
+      selectFormat(format);
+    }
+  });
+});
+
+function selectFormat(format) {
+  selectedFormat = format;
+  const info = FORMAT_INFO[format];
+  
+  // Update active button
+  formatButtons.forEach(btn => {
+    if (btn.dataset.format === format) {
+      btn.classList.add('format-btn--active');
+    } else {
+      btn.classList.remove('format-btn--active');
+    }
+  });
+  
+  // Update format display
+  formatValue.textContent = info.label;
+  formatInfo.textContent = info.info;
+  
+  // Update quality slider based on format
+  if (!info.supportsQuality) {
+    qualitySlider.disabled = true;
+    qualitySlider.style.opacity = '0.5';
+    qualityValue.style.opacity = '0.5';
+  } else {
+    qualitySlider.disabled = false;
+    qualitySlider.style.opacity = '1';
+    qualityValue.style.opacity = '1';
+  }
+}
+
 clearBtn.addEventListener('click', () => {
   results.innerHTML = '';
   storedFiles.length = 0;
@@ -155,20 +222,21 @@ regenerateBtn.addEventListener('click', async () => {
         }
         break;
       }
-      const { width, height, webpBlob, originalInfo } = await convertFile(file, quality);
-      const webpUrl = URL.createObjectURL(webpBlob);
+      const { width, height, convertedBlob, originalInfo } = await convertFile(file, quality, selectedFormat);
+      const convertedUrl = URL.createObjectURL(convertedBlob);
       const { displayName, downloadName } = createFileNameData(file.name);
       renderResult({
         displayName,
         downloadName,
-        webpUrl,
-        webpBlob,
-        webpSize: webpBlob.size,
+        convertedUrl,
+        convertedBlob,
+        convertedSize: convertedBlob.size,
         dimensions: `${width} × ${height}`,
-        mime: webpBlob.type,
+        mime: convertedBlob.type,
         originalInfo,
         quality: qualityPercent,
         resize: resizeOption,
+        format: selectedFormat,
       });
       successCount += 1;
     } catch (error) {
@@ -229,20 +297,21 @@ async function convertFiles(fileList) {
         }
         break;
       }
-      const { width, height, webpBlob, originalInfo } = await convertFile(file, quality);
-      const webpUrl = URL.createObjectURL(webpBlob);
+      const { width, height, convertedBlob, originalInfo } = await convertFile(file, quality, selectedFormat);
+      const convertedUrl = URL.createObjectURL(convertedBlob);
       const { displayName, downloadName } = createFileNameData(file.name);
       renderResult({
         displayName,
         downloadName,
-        webpUrl,
-        webpBlob,
-        webpSize: webpBlob.size,
+        convertedUrl,
+        convertedBlob,
+        convertedSize: convertedBlob.size,
         dimensions: `${width} × ${height}`,
-        mime: webpBlob.type,
+        mime: convertedBlob.type,
         originalInfo,
         quality: qualityPercent,
         resize: resizeOption,
+        format: selectedFormat,
       });
       addStoredFile(file);
     } catch (error) {
@@ -263,7 +332,7 @@ async function convertFiles(fileList) {
   }
 }
 
-async function convertFile(file, quality) {
+async function convertFile(file, quality, format) {
   const meta = guardMetadata.get(file) || {};
   const { img, width, height, mime } = await loadImage(file);
   const outputWidth = meta.width || width;
@@ -278,16 +347,21 @@ async function convertFile(file, quality) {
   }
 
   context.drawImage(img, 0, 0, outputWidth, outputHeight);
-  const webpBlob = await canvasToBlob(canvas, 'image/webp', quality);
+  
+  const formatInfo = FORMAT_INFO[format] || FORMAT_INFO.webp;
+  const mimeType = formatInfo.mime;
+  
+  // For PNG, quality parameter is ignored
+  const convertedBlob = await canvasToBlob(canvas, mimeType, formatInfo.supportsQuality ? quality : undefined);
 
-  if (!webpBlob) {
-    throw new Error('Browser failed to create WebP blob.');
+  if (!convertedBlob) {
+    throw new Error(`Browser failed to create ${formatInfo.label} blob.`);
   }
 
   const sourceMime = meta.mime || mime || file.type || 'unknown';
   const originalInfo = `${formatBytes(file.size)} • ${sourceMime} • ${outputWidth} × ${outputHeight}`;
 
-  return { width: outputWidth, height: outputHeight, webpBlob, originalInfo };
+  return { width: outputWidth, height: outputHeight, convertedBlob, originalInfo };
 }
 
 function loadImage(file) {
@@ -313,7 +387,7 @@ function canvasToBlob(canvas, type, quality) {
 }
 
 function renderResult({
-  displayName, downloadName, webpUrl, webpBlob, webpSize, dimensions, mime, originalInfo, quality, resize
+  displayName, downloadName, convertedUrl, convertedBlob, convertedSize, dimensions, mime, originalInfo, quality, resize, format
 }) {
   const clone = document.importNode(template.content, true);
   const article = clone.querySelector('.result-card');
@@ -325,18 +399,19 @@ function renderResult({
   const copyBtn = clone.querySelector('.result__copy');
   const checksum = clone.querySelector('.result__checksum');
 
+  const formatInfo = FORMAT_INFO[format] || FORMAT_INFO.webp;
   let copyResetId;
-  const qualityLabel = Number.isFinite(quality) ? `Quality ${quality}%` : '';
+  const qualityLabel = Number.isFinite(quality) && formatInfo.supportsQuality ? `Quality ${quality}%` : '';
   const resizeLabel = resize && resize !== 'original' ? `${resize}px` : '';
   let downloadSuffix = '';
-  if (Number.isFinite(quality)) {
+  if (Number.isFinite(quality) && formatInfo.supportsQuality) {
     downloadSuffix += `-q${quality}`;
   }
   if (resizeLabel) {
     downloadSuffix += `-${resizeLabel}`;
   }
 
-  const defaultCopyText = copyBtn.textContent.trim() || 'Copy WebP';
+  const defaultCopyText = copyBtn.textContent.trim() || `Copy ${formatInfo.label}`;
 
   const setCopyLabel = (text, shouldReset = true) => {
     copyBtn.textContent = text;
@@ -359,13 +434,13 @@ function renderResult({
   }
 
   name.textContent = displayTitle;
-  image.alt = `${displayName} preview in WebP format`;
-  image.src = webpUrl;
-  downloadBtn.href = webpUrl;
-  downloadBtn.download = `${downloadName}${downloadSuffix}.webp`;
+  image.alt = `${displayName} preview in ${formatInfo.label} format`;
+  image.src = convertedUrl;
+  downloadBtn.href = convertedUrl;
+  downloadBtn.download = `${downloadName}${downloadSuffix}.${formatInfo.ext}`;
   original.textContent = originalInfo;
   
-  const convertedParts = [formatBytes(webpSize), mime, dimensions];
+  const convertedParts = [formatBytes(convertedSize), mime, dimensions];
   if (qualityLabel) {convertedParts.push(qualityLabel);}
   if (resizeLabel) {convertedParts.push(resizeLabel);}
   if (displayParts.length > 0) {
@@ -374,7 +449,7 @@ function renderResult({
   converted.textContent = convertedParts.join(' • ');
   
   checksum.textContent = 'Calculating…';
-  activeUrls.add(webpUrl);
+  activeUrls.add(convertedUrl);
 
   if (!isClipboardFileSupported()) {
     copyBtn.disabled = true;
@@ -383,7 +458,7 @@ function renderResult({
   } else {
     copyBtn.addEventListener('click', async () => {
       try {
-        await navigator.clipboard.write([new ClipboardItem({ [webpBlob.type]: webpBlob })]);
+        await navigator.clipboard.write([new ClipboardItem({ [convertedBlob.type]: convertedBlob })]);
         setCopyLabel('Copied!');
       } catch (error) {
         console.error(error);
@@ -393,8 +468,8 @@ function renderResult({
   }
 
   results.append(article);
-  registerObjectUrlCleanup(article, webpUrl);
-  populateChecksum(checksum, webpBlob);
+  registerObjectUrlCleanup(article, convertedUrl);
+  populateChecksum(checksum, convertedBlob);
 }
 
 function addStoredFile(file) {
@@ -609,19 +684,58 @@ async function checkFeatureSupport() {
     return { ok: false, reason: 'Canvas toBlob is not supported in this browser.' };
   }
 
-  let supportsWebP = false;
+  // Check support for each format
+  const supportedFormats = [];
+  
+  // Check WebP support
   try {
     const dataUrl = canvas.toDataURL('image/webp');
-    supportsWebP = typeof dataUrl === 'string' && dataUrl.startsWith('data:image/webp');
+    if (typeof dataUrl === 'string' && dataUrl.startsWith('data:image/webp')) {
+      supportedFormats.push('webp');
+    }
   } catch {
-    supportsWebP = false;
+    // WebP not supported
+  }
+  
+  // Check PNG support (almost always supported)
+  try {
+    const dataUrl = canvas.toDataURL('image/png');
+    if (typeof dataUrl === 'string' && dataUrl.startsWith('data:image/png')) {
+      supportedFormats.push('png');
+    }
+  } catch {
+    // PNG not supported
+  }
+  
+  // Check JPEG support (almost always supported)
+  try {
+    const dataUrl = canvas.toDataURL('image/jpeg');
+    if (typeof dataUrl === 'string' && dataUrl.startsWith('data:image/jpeg')) {
+      supportedFormats.push('jpeg');
+    }
+  } catch {
+    // JPEG not supported
   }
 
-  if (!supportsWebP) {
-    return { ok: false, reason: 'WebP generation is not supported in this browser.' };
+  if (supportedFormats.length === 0) {
+    return { ok: false, reason: 'No image format conversion is supported in this browser.' };
   }
 
-  return { ok: true };
+  // Disable unsupported format buttons
+  formatButtons.forEach(btn => {
+    const format = btn.dataset.format;
+    if (!supportedFormats.includes(format)) {
+      btn.disabled = true;
+      btn.title = `${FORMAT_INFO[format]?.label || format} is not supported in this browser`;
+    }
+  });
+  
+  // If WebP is not supported but selected, switch to first supported format
+  if (!supportedFormats.includes(selectedFormat)) {
+    selectFormat(supportedFormats[0]);
+  }
+
+  return { ok: true, supportedFormats };
 }
 
 function disableApp(reason) {

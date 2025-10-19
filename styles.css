@@ -228,12 +228,12 @@ body {
 }
 
 .hero__content {
-  max-width: 800px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
 .hero__title {
-  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-size: clamp(2rem, 5vw, 3.0rem);
   font-weight: 700;
   margin-bottom: var(--spacing-md);
   letter-spacing: -0.02em;
@@ -248,9 +248,9 @@ body {
 }
 
 .hero__subtitle {
-  font-size: clamp(1rem, 2.5vw, 1.25rem);
+  font-size: clamp(0.75rem, 2.5vw, 1rem);
   opacity: 0.95;
-  line-height: 1.7;
+  line-height: 1.5;
 }
 
 .hero__features {
@@ -472,6 +472,55 @@ body {
 
 .resize-info {
   margin-top: 0.75rem;
+  padding: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--color-text-light);
+  text-align: center;
+  background: rgba(99, 102, 241, 0.05);
+  border-radius: var(--radius-sm);
+  min-height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.format-selector {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.format-btn {
+  flex: 1;
+  padding: 0.625rem 1rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  border: 2px solid var(--color-border);
+  background: var(--color-background);
+  color: var(--color-text);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.format-btn:hover {
+  border-color: var(--color-primary);
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.format-btn--active {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: white;
+}
+
+.format-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.format-info {
   padding: 0.5rem;
   font-size: 0.8125rem;
   color: var(--color-text-light);
@@ -976,7 +1025,7 @@ body {
 
 /* ========== Privacy Page ========== */
 .page .hero {
-  min-height: 240px;
+  min-height: 200px;
 }
 
 .privacy-page {
