@@ -1,6 +1,9 @@
 # Just Image Converter
 
-Convert JPG and PNG images to modern WebP files—fast, private, and right in your browser. The app runs entirely on the client, so nothing ever leaves your device.
+[![Tests](https://github.com/donpui/image-converter/actions/workflows/tests.yml/badge.svg)](https://github.com/donpui/image-converter/actions/workflows/tests.yml)
+[![Playwright Tests](https://github.com/donpui/image-converter/actions/workflows/playwright.yml/badge.svg)](https://github.com/donpui/image-converter/actions/workflows/playwright.yml)
+
+Convert JPG, PNG, or modern WebP files—fast, private, and right in your browser. The app runs entirely on the client, so nothing ever leaves your device. 
 
 ## Features
 - Drag-and-drop uploads with fallback file picker
